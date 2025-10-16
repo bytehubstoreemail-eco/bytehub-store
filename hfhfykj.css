@@ -136,7 +136,43 @@
   background: #198754;
   color: white;
 }
-
+/* ❤️ زر المفضلة */
+.wishlist-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  border: none;
+  background: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.wishlist-btn:hover {
+  background: #ff3366;
+  color: #fff;
+  transform: scale(1.1);
+}
+/* 🛒 أزرار Add/View عند hover */
+.hover-buttons {
+  position: absolute;
+  bottom: -60px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  opacity: 0; /* مخفية في البداية */
+  pointer-events: none; /* لا يمكن الضغط عليها وهي مخفية */
+}
 /* ⏳ نص التحميل */
 .loading {
   text-align: center;
