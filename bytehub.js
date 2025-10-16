@@ -179,7 +179,6 @@
   updateCartCount();
 }
 
-
   window.renderProductsFromFeed = renderProductsFromFeed;
 
   /* ---------------- Hero Slider ---------------- */
