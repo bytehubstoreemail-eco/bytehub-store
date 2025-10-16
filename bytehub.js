@@ -104,74 +104,81 @@
   }
 
   /* ---------------- Feed Rendering ---------------- */
-  function renderProductsFromFeed(json){
-    const entries = json.feed.entry || [];
-    const container = qs('#productsContainer');
-    if(!container) return;
-    if(entries.length === 0){ container.innerHTML = "<p>لا توجد منتجات حاليا!</p>"; return; }
-
-    container.innerHTML = entries.map(entry => {
-      const title = entry.title.$t;
-      const link = entry.link.find(l=>l.rel==='alternate').href;
-      const content = entry.content.$t;
-
-      // استخراج الصورة
-      let img = "https://via.placeholder.com/300x220";
-      const regexImg = /<img[^>]+src=['"]([^'"]+)['"]/i;
-      const match = content.match(regexImg);
-      if (match) img = match[1];
-
-      // الأسعار
-      const currentPrice = (content.match(/\$([0-9.]+)/) || [])[1];
-      const oldPrice = (content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i) || [])[1];
-
-      // خصائص إضافية
-      const category = (entry.category && entry.category[0]?.term) || "Uncategorized";
-      const isHot = /Hot/i.test(content);
-      const isSold = /Sold/i.test(content);
-      const isAvailable = /متوفر|available/i.test(content);
-      const badge = isSold ? "Sold" : isHot ? "Hot" : "";
-      const available = isAvailable ? "متوفر" : "غير متوفر";
-
-      const productObj = {
-        id: entry.id?.$t || title,
-        title, link, img,
-        price: currentPrice ? parseFloat(currentPrice) : 0,
-        oldPrice: oldPrice ? parseFloat(oldPrice) : null,
-        category, available, badge,
-        shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
-      };
-
-      return `
-        <div class='product-card' data-id='${productObj.id}'>
-          ${badge ? `<span class='badge'>${badge}</span>` : ""}
-          <span class='status ${isAvailable ? '' : 'unavailable'}' title='الحالة'>${available}</span>
-
-          <a class='product-link' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>
-            <img alt='${productObj.title}' class='product-img' src='${productObj.img}'/>
-          </a>
-
-          <div class='card-actions'>
-            <button class='icon-btn' onclick='addToCartFromGrid(${JSON.stringify(productObj)}, false)' title='Add to cart'>🛒</button>
-            <button class='icon-btn' onclick='openQuickView(${JSON.stringify(productObj)})' title='Quick view'>🔍</button>
-            <button class='icon-btn' onclick='toggleWishlistFromGrid(${JSON.stringify(productObj)}, false)' title='Wishlist'>❤️</button>
-          </div>
-
-          <div class='product-info'>
-            <div class='product-category'>${productObj.category}</div>
-            <a class='product-name' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>${productObj.title}</a>
-            <div class='price-row'>
-              ${productObj.price ? `<span class='price'>$${productObj.price.toFixed(2)}</span>` : `<span class='price text-muted'>غير متوفر</span>`}
-              ${productObj.oldPrice ? `<span class='old-price'>$${productObj.oldPrice.toFixed(2)}</span>` : ""}
-            </div>
-            <div class='rating'>⭐⭐⭐⭐⭐ (25)</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    updateCartCount();
+ function renderProductsFromFeed(json) {
+  const entries = json.feed.entry || [];
+  const container = qs('#productsContainer');
+  if (!container) return;
+  if (entries.length === 0) {
+    container.innerHTML = "<p>لا توجد منتجات حاليا!</p>";
+    return;
   }
+
+  container.innerHTML = entries.map(entry => {
+    const title = entry.title.$t;
+    const link = entry.link.find(l => l.rel === 'alternate').href;
+    const content = entry.content.$t;
+
+    // 🖼️ استخراج الصورة
+    let img = "https://via.placeholder.com/300x220";
+    const regexImg = /<img[^>]+src=['"]([^'"]+)['"]/i;
+    const match = content.match(regexImg);
+    if (match) img = match[1];
+
+    // 💰 الأسعار
+    const currentPrice = (content.match(/\$([0-9.]+)/) || [])[1];
+    const oldPrice = (content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i) || [])[1];
+
+    // 🏷️ خصائص إضافية
+    const category = (entry.category && entry.category[0]?.term) || "Uncategorized";
+    const isHot = /Hot/i.test(content);
+    const isSold = /Sold/i.test(content);
+    const isAvailable = /متوفر|available/i.test(content);
+    const badge = isSold ? "Sold" : isHot ? "Hot" : "";
+    const available = isAvailable ? "متوفر" : "غير متوفر";
+
+    const productObj = {
+      id: entry.id?.$t || title,
+      title, link, img,
+      price: currentPrice ? parseFloat(currentPrice) : 0,
+      oldPrice: oldPrice ? parseFloat(oldPrice) : null,
+      category, available, badge,
+      shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
+    };
+
+    return `
+      <div class='product-card' data-id='${productObj.id}'>
+        ${badge ? `<span class='badge'>${badge}</span>` : ""}
+        <span class='status ${isAvailable ? '' : 'unavailable'}'>${available}</span>
+
+        <!-- ❤️ زر المفضلة -->
+        <button class='wishlist-btn' onclick='toggleWishlistFromGrid(${JSON.stringify(productObj)}, false)'>❤️</button>
+
+        <a class='product-link' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>
+          <img alt='${productObj.title}' class='product-img' src='${productObj.img}'/>
+        </a>
+
+        <!-- 🛒 أزرار hover -->
+        <div class='card-actions'>
+          <button class='rect-btn add' onclick='addToCartFromGrid(${JSON.stringify(productObj)}, false)'>🛒 add to cart</button>
+          <button class='rect-btn view' onclick='openQuickView(${JSON.stringify(productObj)})'>👁️view</button>
+        </div>
+
+        <div class='product-info'>
+          <div class='product-category'>${productObj.category}</div>
+          <a class='product-name' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>${productObj.title}</a>
+          <div class='price-row'>
+            ${productObj.price ? `<span class='price'>$${productObj.price.toFixed(2)}</span>` : `<span class='price text-muted'>غير متوفر</span>`}
+            ${productObj.oldPrice ? `<span class='old-price'>$${productObj.oldPrice.toFixed(2)}</span>` : ""}
+          </div>
+          <div class='rating'>⭐⭐⭐⭐⭐ (25)</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  updateCartCount();
+}
+
 
   window.renderProductsFromFeed = renderProductsFromFeed;
 
