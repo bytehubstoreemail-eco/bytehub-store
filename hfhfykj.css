@@ -1,9 +1,14 @@
+/* ==========================================================
+   🎨 Store Layout & Product Grid
+   ========================================================== */
+
 /* 🎨 التخطيط العام */
 .store-layout {
   display: grid;
   grid-template-columns: 250px 1fr;
   gap: 1.5rem;
   padding: 2rem 1rem;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* 📢 الإعلانات الجانبية */
@@ -110,39 +115,7 @@
 .rating {
   color: #ffc107;
   font-size: 0.9rem;
-}
-
-/* 🛍️ الأزرار */
-.card-actions {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.product-card:hover .card-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-.icon-btn {
-  background: rgba(255,255,255,0.95);
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.icon-btn:hover {
-  background: #198754;
-  color: white;
+  margin-top: 6px;
 }
 
 /* ❤️ زر المفضلة */
@@ -167,6 +140,34 @@
   background: #ff3366;
   color: #fff;
   transform: scale(1.1);
+}
+
+/* 🟩 أزرار مستطيلة Add/View */
+.rect-btn {
+  background: #198754;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .3s, transform .3s;
+}
+.rect-btn:hover {
+  background: #145c39;
+  transform: translateY(-2px);
+}
+
+/* ترتيب الأزرار داخل البطاقة */
+.card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  opacity: 1; /* دائمًا ظاهرة */
+  position: relative;
+  transform: none;
+  pointer-events: auto;
 }
 
 /* ⏳ نص التحميل */
