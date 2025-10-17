@@ -105,43 +105,83 @@ document.addEventListener('click', e => {
   }
 });
 
-/* ---------------- Dropdown Cart HTML & Events ---------------- */
-document.addEventListener('DOMContentLoaded', () => {
-  // 1️⃣ إنشاء HTML السلة
-  const cartWrapper = document.createElement('div');
-  cartWrapper.innerHTML = `
-    <button id="cartBtn">🛒 Cart <span id="cartCount">0</span></button>
-    <div class="cart-menu" style="display:none;">
-      <div id="cartItemsContainer"></div>
-      <div>Subtotal: $<span id="cartSubtotal">0.00</span></div>
-      <button id="emptyCart">Empty Cart</button>
-      <button id="checkout"><i class="fa fa-credit-card"></i> Checkout</button>
-    </div>
+// ================= Dropdown Cart من HTML الموجود =================
+const cartBtn = qs('#cartBtn'); // زر السلة الموجود في HTML
+let cartMenu = document.querySelector('#cartDropdown'); // Dropdown container (أنشئه في HTML)
+if(!cartMenu){
+  // إنشاء Dropdown إذا لم يكن موجود
+  cartMenu = document.createElement('div');
+  cartMenu.id = 'cartDropdown';
+  cartMenu.style.display = 'none';
+  cartMenu.innerHTML = `
+    <div id="cartItemsContainer"></div>
+    <div>Subtotal: $<span id="cartSubtotal">0.00</span></div>
+    <button id="emptyCart">Empty Cart</button>
+    <button id="checkout">Checkout</button>
   `;
-  document.body.prepend(cartWrapper);
+  cartBtn.after(cartMenu);
+}
 
-  // 2️⃣ ربط hover للسلة
-  const cartBtn = qs('#cartBtn');
-  const cartMenu = qs('.cart-menu');
-  cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
-  cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{ if(!cartMenu.matches(':hover')) cartMenu.style.display='none'; }, 200));
-  cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display = 'none');
-  cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+// إظهار / إخفاء Dropdown عند Hover
+cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{
+  if(!cartMenu.matches(':hover')) cartMenu.style.display='none';
+},200));
+cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display='block');
+cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display='none');
 
-  // 3️⃣ ربط أزرار Empty / Checkout
-  qs('#emptyCart').addEventListener('click', ()=>{
-    writeCart([]);
+// تحديث محتوى Dropdown
+function updateCartDropdown() {
+  const cart = readCart();
+  const container = qs('#cartItemsContainer');
+  if(!container) return;
+
+  if(cart.length===0){
+    container.innerHTML = "<p>السلة فارغة</p>";
+    qs('#cartSubtotal').textContent = "0.00";
+  } else {
+    container.innerHTML = cart.map(p=>`
+      <div class="cart-item" data-id="${p.id}">
+        <img src="${p.img}" alt="${p.title}" style="width:40px;height:40px;object-fit:cover;margin-right:5px;">
+        <div class="flex-grow-1">
+          <div>${p.title}</div>
+          <small>${p.quantity} × $${p.price.toFixed(2)}</small>
+        </div>
+        <button class="remove-item">×</button>
+      </div>
+    `).join('');
+    const subtotal = cart.reduce((sum,p)=>sum + p.price*(p.quantity||1),0);
+    qs('#cartSubtotal').textContent = subtotal.toFixed(2);
+  }
+
+  // تحديث عداد السلة فوق أيقونة السلة
+  const cartCount = cart.reduce((sum,i)=>sum+(i.quantity||1),0);
+  qs('#cartCount').textContent = cartCount;
+}
+
+// إزالة عنصر من Dropdown
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('remove-item')){
+    const id = e.target.closest('.cart-item').dataset.id;
+    const newCart = readCart().filter(p=>p.id!==id);
+    writeCart(newCart);
     updateCartCount();
     updateCartDropdown();
-  });
+  }
+});
 
-  qs('#checkout').addEventListener('click', ()=>{
-    window.location.href = '/p/cart.html'; 
-  });
-
-  // 4️⃣ تحديث السلة عند التحميل
+// أزرار Empty / Checkout
+qs('#emptyCart')?.addEventListener('click', ()=>{
+  writeCart([]);
+  updateCartCount();
   updateCartDropdown();
 });
+qs('#checkout')?.addEventListener('click', ()=>{
+  window.location.href = '/p/checkout.html';
+});
+
+// تهيئة عند تحميل الصفحة
+updateCartDropdown();
 
   /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
