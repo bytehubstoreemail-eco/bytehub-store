@@ -51,8 +51,10 @@
     });
   }
 
+  (async function(){
   await fetchCurrencyRates();
   setCurrencyDropdown();
+})();
      /* ---------------- Cart / Wishlist Helpers ---------------- */
   function readCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
   function writeCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
