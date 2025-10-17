@@ -55,15 +55,18 @@
   await fetchCurrencyRates();
   setCurrencyDropdown();
 })();
-   function injectCurrencyDropdown(){
-  const nav = qs('.nav-right') || qs('header') || document.body;
-  if(!nav || qs('#currencyDropdown')) return;
+  function injectCurrencyDropdown(){
+  const trackingItem = qsa("li.nav-item").find(li =>
+    li.textContent.includes("Order Tracking")
+  );
 
-  const wrapper = document.createElement('div');
+  if (!trackingItem || qs('#currencyDropdown')) return;
+
+  const wrapper = document.createElement('li');
   wrapper.id = 'currencyDropdown';
-  wrapper.className = 'currency-dropdown';
+  wrapper.className = 'nav-item currency-dropdown';
   wrapper.innerHTML = `
-    <button class="currency-toggle">
+    <button class="currency-toggle nav-link">
       💱 <span id="selectedCurrency">${localStorage.getItem('currency') || 'USD'}</span> <i class="fa fa-chevron-down"></i>
     </button>
     <div class="currency-menu" style="display:none">
@@ -72,7 +75,8 @@
       <button data-currency="DZD">دج DZD</button>
     </div>
   `;
-  nav.prepend(wrapper);
+
+  trackingItem.after(wrapper);
 
   const toggle = wrapper.querySelector('.currency-toggle');
   const menu = wrapper.querySelector('.currency-menu');
