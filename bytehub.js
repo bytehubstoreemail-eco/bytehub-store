@@ -69,12 +69,6 @@ window.addToCartFromGrid = addToCart;
   }
    window.toggleWishlistFromGrid = toggleWishlist;
    
-const cartBtn = qs('#cartBtn');
-const cartMenu = qs('.cart-menu');
-cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
-cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{ if(!cartMenu.matches(':hover')) cartMenu.style.display='none'; }, 200));
-cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display = 'none');
-cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
 function updateCartDropdown(){
   const container = qs('#cartItemsContainer');
   const cart = readCart();
@@ -86,7 +80,6 @@ function updateCartDropdown(){
     return;
   }
  
-
   container.innerHTML = cart.map(p => `
     <div class="cart-item" data-id="${p.id}">
       <img src="${p.img}" alt="${p.title}">
@@ -114,6 +107,7 @@ document.addEventListener('click', e => {
 
 /* ---------------- Dropdown Cart HTML & Events ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
+  // 1️⃣ إنشاء HTML السلة
   const cartWrapper = document.createElement('div');
   cartWrapper.innerHTML = `
     <button id="cartBtn">🛒 Cart <span id="cartCount">0</span></button>
@@ -126,7 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.body.prepend(cartWrapper);
 
-  // **ربط أزرار السلة بعد إنشاء HTML**
+  // 2️⃣ ربط hover للسلة
+  const cartBtn = qs('#cartBtn');
+  const cartMenu = qs('.cart-menu');
+  cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+  cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{ if(!cartMenu.matches(':hover')) cartMenu.style.display='none'; }, 200));
+  cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display = 'none');
+  cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+
+  // 3️⃣ ربط أزرار Empty / Checkout
   qs('#emptyCart').addEventListener('click', ()=>{
     writeCart([]);
     updateCartCount();
@@ -136,9 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
   qs('#checkout').addEventListener('click', ()=>{
     window.location.href = '/p/cart.html'; 
   });
+
+  // 4️⃣ تحديث السلة عند التحميل
+  updateCartDropdown();
 });
-    // تحديث السلة عند تحميل الصفحة
-    updateCartDropdown();
+
   /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
     localStorage.setItem('currentProduct', JSON.stringify(product));
