@@ -117,6 +117,7 @@
     if(redirect) window.location.href = '/p/cart.html';
     else alert('✅ تمت إضافة المنتج إلى السلة');
   }
+   window.addToCart = addToCart;
   window.addToCartFromGrid = addToCart;
 
   function toggleWishlist(product, redirect=false){
