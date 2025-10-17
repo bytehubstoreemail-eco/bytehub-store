@@ -295,6 +295,93 @@ document.addEventListener('DOMContentLoaded', () => {
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
   });
+   /* ---------------- Checkout Page JS ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const checkoutForm = document.querySelector('#checkoutForm');
+  const orderDetailsContainer = document.querySelector('#orderDetails');
+  const thankYouMessage = document.querySelector('#thankYouMessage');
+
+  if(!checkoutForm) return;
+
+  // تحديث السلة عند التحميل
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  const cartReviewContainer = document.querySelector('#cartReview');
+  if(cartReviewContainer){
+    cartReviewContainer.innerHTML = cart.length
+      ? cart.map(i=>`
+          <div class="checkout-item">
+            <span>${i.title} × ${i.quantity}</span>
+            <span>$${(i.price*i.quantity).toFixed(2)}</span>
+          </div>
+        `).join('')
+      : "<p>السلة فارغة</p>";
+
+    const subtotalEl = document.querySelector('#checkoutSubtotal');
+    if(subtotalEl){
+      const subtotal = cart.reduce((sum,i)=>sum + i.price*i.quantity,0);
+      subtotalEl.textContent = subtotal.toFixed(2);
+    }
+  }
+
+  // عند إرسال النموذج
+  checkoutForm.addEventListener('submit', e => {
+    e.preventDefault();
+
+    if(cart.length === 0){
+      alert('السلة فارغة!');
+      return;
+    }
+
+    // جمع بيانات العميل
+    const customer = {
+      name: document.querySelector('#customerName').value,
+      email: document.querySelector('#customerEmail').value,
+      phone: document.querySelector('#customerPhone').value,
+      address: document.querySelector('#customerAddress').value,
+      city: document.querySelector('#customerCity').value,
+      postcode: document.querySelector('#customerPostcode').value,
+      payment: document.querySelector('#paymentMethod').value
+    };
+
+    // إنشاء رقم طلب عشوائي
+    const orderId = Math.floor(Math.random() * 1e11);
+    const orderTotal = cart.reduce((sum,i)=>sum + i.price*i.quantity,0);
+
+    // إنشاء تفاصيل الطلب
+    const orderHTML = `
+      <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
+      <p><strong>رقم الطلب:</strong> ${orderId}</p>
+      <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
+      <p><strong>الإجمالي:</strong> $${orderTotal.toFixed(2)}</p>
+      <h4>تفاصيل الطلب:</h4>
+      <ul>
+        ${cart.map(i=>`<li>${i.title} × ${i.quantity} = $${(i.price*i.quantity).toFixed(2)}</li>`).join('')}
+      </ul>
+      <h4>تفاصيل العميل:</h4>
+      <p>الاسم: ${customer.name}</p>
+      <p>البريد: ${customer.email}</p>
+      <p>الهاتف: ${customer.phone}</p>
+      <p>العنوان: ${customer.address}</p>
+      <p>المدينة: ${customer.city}</p>
+      <p>الرمز البريدي: ${customer.postcode}</p>
+      <button id="printOrder">طباعة الطلب</button>
+    `;
+
+    orderDetailsContainer.innerHTML = orderHTML;
+    thankYouMessage.style.display = 'block';
+    checkoutForm.style.display = 'none';
+
+    // مسح السلة بعد الطلب
+    localStorage.setItem('cart','[]');
+    document.querySelector('#cartCount').textContent = "0";
+
+    // زر الطباعة
+    document.querySelector('#printOrder').addEventListener('click', ()=>{
+      window.print();
+    });
+  });
+});
+
 
 })();
 
