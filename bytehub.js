@@ -111,25 +111,9 @@ document.addEventListener('click', e => {
     updateCartDropdown();
   }
 });
-  
-document.addEventListener('DOMContentLoaded', () => {
-    qs('#emptyCart')?.addEventListener('click', ()=>{
-      writeCart([]);
-      updateCartCount();
-      updateCartDropdown();
-    });
-
-    qs('#checkout')?.addEventListener('click', ()=>{
-      window.location.href = '/p/cart.html'; 
-    });
-
-    // تحديث السلة عند تحميل الصفحة
-    updateCartDropdown();
-});
 
 /* ---------------- Dropdown Cart HTML & Events ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
-  // إنشاء عناصر السلة
   const cartWrapper = document.createElement('div');
   cartWrapper.innerHTML = `
     <button id="cartBtn">🛒 Cart <span id="cartCount">0</span></button>
@@ -142,6 +126,19 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.body.prepend(cartWrapper);
 
+  // **ربط أزرار السلة بعد إنشاء HTML**
+  qs('#emptyCart').addEventListener('click', ()=>{
+    writeCart([]);
+    updateCartCount();
+    updateCartDropdown();
+  });
+
+  qs('#checkout').addEventListener('click', ()=>{
+    window.location.href = '/p/cart.html'; 
+  });
+});
+    // تحديث السلة عند تحميل الصفحة
+    updateCartDropdown();
   /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
     localStorage.setItem('currentProduct', JSON.stringify(product));
