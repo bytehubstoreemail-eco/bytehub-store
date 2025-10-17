@@ -16,7 +16,7 @@
 
   async function fetchCurrencyRates(){
     try {
-      const res = await fetch('https://api.frankfurter.dev/latest?from=USD&to=EUR,DZD');
+      const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,DZD');
       const data = await res.json();
       currencyRates = { USD: 1, ...data.rates };
       localStorage.setItem('currencyRates', JSON.stringify(currencyRates));
