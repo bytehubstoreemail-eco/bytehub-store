@@ -427,86 +427,107 @@
     document.body.appendChild(script);
   });
 
-  /* ---------------- Checkout Page JS ---------------- */
-  document.addEventListener('DOMContentLoaded', () => {
-    const checkoutForm = qs('#checkoutForm');
-    const orderDetailsContainer = qs('#orderDetails');
-    const thankYouMessage = qs('#thankYouMessage');
+/* ---------------- Checkout Page JS ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const qs = s => document.querySelector(s);
 
-    if(!checkoutForm) return;
+  // ✅ ربط محتوى صفحة Blogger بالحاوية المخصصة
+  if (window.location.href.includes('/p/checkout.html')) {
+    const container = qs('#checkoutPageContainer');
+    const postBody = qs('.post-body');
 
-    const cart = readCart();
-    const cartReviewContainer = qs('#cartReview');
-    if(cartReviewContainer){
-      cartReviewContainer.innerHTML = cart.length
-        ? cart.map(i=>`
-            <div class="checkout-item">
-              <span>${i.title} × ${i.quantity}</span>
-              <span>${convertPrice(i.price*i.quantity)}</span>
-            </div>
-          `).join('')
-        : "<p>السلة فارغة</p>";
+    if (container && postBody) {
+      container.innerHTML = postBody.innerHTML;
+      container.style.display = 'block';
+      postBody.style.display = 'none';
 
-      const subtotalEl = qs('#checkoutSubtotal');
-      if(subtotalEl){
-        const subtotal = cart.reduce((sum,i)=>sum + i.price*i.quantity,0);
-        subtotalEl.textContent = convertPrice(subtotal);
-      }
+      // ⏱ تأخير بسيط لضمان أن النموذج تم حقنه في DOM
+      setTimeout(() => {
+        const checkoutForm = qs('#checkoutForm');
+        const orderDetailsContainer = qs('#orderDetails');
+        const thankYouMessage = qs('#thankYouMessage');
+
+        if (!checkoutForm) return;
+
+        const cart = readCart();
+        const cartReviewContainer = qs('#checkoutItemsContainer');
+        const subtotalEl = qs('#checkoutSubtotal');
+
+        if (cartReviewContainer) {
+          cartReviewContainer.innerHTML = cart.length
+            ? cart.map(i => `
+                <div class="checkout-item">
+                  <span>${i.title} × ${i.quantity}</span>
+                  <span>${convertPrice(i.price * i.quantity)}</span>
+                </div>
+              `).join('')
+            : "<p>السلة فارغة</p>";
+        }
+
+        if (subtotalEl) {
+          const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+          subtotalEl.textContent = convertPrice(subtotal);
+        }
+
+        checkoutForm.addEventListener('submit', e => {
+          e.preventDefault();
+
+          if (cart.length === 0) {
+            alert('السلة فارغة!');
+            return;
+          }
+
+          const customer = {
+            name: qs('#customerName').value,
+            email: qs('#customerEmail').value,
+            phone: qs('#customerPhone').value,
+            address: qs('#customerAddress').value,
+            city: qs('#customerCity').value,
+            postcode: qs('#customerPostcode').value,
+            payment: qs('#paymentMethod').value
+          };
+
+          if (!customer.name || !customer.email || !customer.phone || !customer.address) {
+            alert('يرجى ملء جميع الحقول المطلوبة');
+            return;
+          }
+
+          const orderId = Math.floor(Math.random() * 1e11);
+          const orderTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+          const orderHTML = `
+            <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
+            <p><strong>رقم الطلب:</strong> ${orderId}</p>
+            <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>الإجمالي:</strong> ${convertPrice(orderTotal)}</p>
+            <h4>تفاصيل الطلب:</h4>
+            <ul>
+              ${cart.map(i => `<li>${i.title} × ${i.quantity} = ${convertPrice(i.price * i.quantity)}</li>`).join('')}
+            </ul>
+            <h4>تفاصيل العميل:</h4>
+            <p>الاسم: ${customer.name}</p>
+            <p>البريد: ${customer.email}</p>
+            <p>الهاتف: ${customer.phone}</p>
+            <p>العنوان: ${customer.address}</p>
+            <p>المدينة: ${customer.city}</p>
+            <p>الرمز البريدي: ${customer.postcode}</p>
+            <button id="printOrder">طباعة الطلب</button>
+          `;
+
+          orderDetailsContainer.innerHTML = orderHTML;
+          thankYouMessage.style.display = 'block';
+          checkoutForm.style.display = 'none';
+
+          localStorage.setItem('cart', '[]');
+          qs('#cartCount') && (qs('#cartCount').textContent = "0");
+
+          qs('#printOrder')?.addEventListener('click', () => {
+            window.print();
+          });
+        });
+      }, 50);
     }
-
-    checkoutForm.addEventListener('submit', e => {
-      e.preventDefault();
-      if(cart.length === 0){
-        alert('السلة فارغة!');
-        return;
-      }
-
-      const customer = {
-        name: qs('#customerName').value,
-        email: qs('#customerEmail').value,
-        phone: qs('#customerPhone').value,
-        address: qs('#customerAddress').value,
-        city: qs('#customerCity').value,
-        postcode: qs('#customerPostcode').value,
-        payment: qs('#paymentMethod').value
-      };
-
-      if(!customer.name || !customer.email || !customer.phone || !customer.address){
-        alert('يرجى ملء جميع الحقول المطلوبة');
-        return;
-      }
-
-      const orderId = Math.floor(Math.random() * 1e11);
-      const orderTotal = cart.reduce((sum,i)=>sum + i.price*i.quantity,0);
-
-      const orderHTML = `
-        <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
-        <p><strong>رقم الطلب:</strong> ${orderId}</p>
-        <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
-        <p><strong>الإجمالي:</strong> ${convertPrice(orderTotal)}</p>
-        <h4>تفاصيل الطلب:</h4>
-        <ul>
-          ${cart.map(i=>`<li>${i.title} × ${i.quantity} = ${convertPrice(i.price*i.quantity)}</li>`).join('')}
-        </ul>
-        <h4>تفاصيل العميل:</h4>
-        <p>الاسم: ${customer.name}</p>
-        <p>البريد: ${customer.email}</p>
-        <p>الهاتف: ${customer.phone}</p>
-        <p>العنوان: ${customer.address}</p>
-        <p>المدينة: ${customer.city}</p>
-        <p>الرمز البريدي: ${customer.postcode}</p>
-        <button id="printOrder">طباعة الطلب</button>
-      `;
-
-      orderDetailsContainer.innerHTML = orderHTML;
-      thankYouMessage.style.display = 'block';
-      checkoutForm.style.display = 'none';
-
-      localStorage.setItem('cart','[]');
-      qs('#cartCount').textContent = "0";
-
-      qs('#printOrder')?.addEventListener('click', ()=>{ window.print(); });
-    });
-  });
+  }
+});
 
 })();
