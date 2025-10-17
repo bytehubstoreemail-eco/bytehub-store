@@ -1,6 +1,6 @@
 /* ==========================================================
    🛍️ StoreApp.js — Blogger Store Integration
-   Version: 1.0.0 | Author: ByteHub Store
+   Version: 1.1.0 | Author: ByteHub Store
    Description: Handles product rendering, cart, wishlist, and UI actions.
    ========================================================== */
 
@@ -73,24 +73,76 @@
     window.location.href = '/p/product.html';
   }
 
-  function renderProductDetailIntoModal(product, modal){
-    modal.innerHTML = `
-      <div class="qv-inner">
-        <button class="qv-close" onclick='this.closest("#quickViewModal").style.display="none"'>×</button>
-        <div class="qv-left"><img src="${product.img}" alt="${product.title}" /></div>
-        <div class="qv-right">
-          <h3>${product.title}</h3>
-          <p class="price">$${product.price}</p>
-          <p>${product.shortDesc||''}</p>
-          <div class="qv-actions">
-            <button onclick='addToCartFromGrid(${JSON.stringify(product)}, true)'>Add to Cart</button>
-            <button onclick='toggleWishlistFromGrid(${JSON.stringify(product)}, true)'>Wishlist</button>
-            <button onclick='openProductDetails(${JSON.stringify(product)})'>View Details</button>
-          </div>
+function renderProductDetailIntoModal(product, modal){
+  const colors = product.colors || ["Default"]; // يمكنك تعديلها حسب المنتج
+  modal.innerHTML = `
+    <div class="qv-inner" style="display:flex; gap:20px; max-width:900px;">
+      
+      <!-- قسم الصور -->
+      <div class="qv-left" style="flex:1;">
+        <img id="mainQvImage" src="${product.img}" alt="${product.title}" style="width:100%; border:1px solid #ccc; border-radius:8px;"/>
+        <div class="qv-slider" style="display:flex; gap:10px; margin-top:10px;">
+          ${(product.images || [product.img]).map(img => `
+            <img src="${img}" style="width:60px; height:60px; object-fit:cover; cursor:pointer; border:1px solid #ccc; border-radius:4px;"
+                 onclick="document.getElementById('mainQvImage').src='${img}'" />
+          `).join('')}
         </div>
       </div>
-    `;
-  }
+
+      <!-- قسم التفاصيل -->
+      <div class="qv-right" style="flex:1.2;">
+        <h2 style="margin-bottom:8px;">${product.title}</h2>
+        <div class="product-category" style="margin-bottom:8px;">Category: ${product.category}</div>
+        <div class="price-row" style="margin-bottom:12px;">
+          <span class="price" style="font-weight:bold; font-size:1.2em;">$${product.price.toFixed(2)}</span>
+          ${product.oldPrice ? `<span class="old-price" style="text-decoration:line-through; margin-left:8px; color:#999;">$${product.oldPrice.toFixed(2)}</span>` : ""}
+        </div>
+        <p class="short-desc" style="margin-bottom:12px;">${product.shortDesc}</p>
+
+        <!-- اختيار اللون والكمية -->
+        <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
+          <select id="qvColorSelect" style="padding:4px;">
+            ${colors.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <input id="qvQuantity" type="number" value="1" min="1" style="width:60px; padding:4px;"/>
+        </div>
+
+        <!-- أزرار التفاعل -->
+        <div class="qv-actions" style="display:flex; gap:10px; margin-bottom:12px;">
+          <button style="padding:8px 12px; background:#0b2545; color:white; border:none; border-radius:4px;"
+                  onclick='addToCartFromGrid(Object.assign({}, ${JSON.stringify(product)}, {color:document.getElementById("qvColorSelect").value, quantity:parseInt(document.getElementById("qvQuantity").value)}), true)'>
+            🛒 Add to Cart
+          </button>
+          <button style="padding:8px 12px; border:1px solid #0b2545; border-radius:4px; background:white; cursor:pointer;"
+                  onclick='window.location.href="/p/cart.html"'>
+            View Cart
+          </button>
+          <button style="padding:8px 12px; border:1px solid #f00; border-radius:4px; background:white; cursor:pointer;"
+                  onclick='toggleWishlistFromGrid(${JSON.stringify(product)}, true)'>
+            ❤️ Wishlist
+          </button>
+          <button style="padding:8px 12px; background:#25D366; color:white; border:none; border-radius:4px;"
+                  onclick='window.open("https://wa.me/1234567890?text=طلب%20منتج%20${encodeURIComponent(product.title)}")'>
+            📱 WhatsApp
+          </button>
+        </div>
+
+        <!-- أيقونات المشاركة الاجتماعية -->
+        <div class="social-share" style="display:flex; gap:10px;">
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}" target="_blank">Facebook</a>
+          <a href="https://twitter.com/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.title)}" target="_blank">Twitter</a>
+          <a href="#" target="_blank">Instagram</a>
+          <a href="#" target="_blank">YouTube</a>
+          <a href="#" target="_blank">TikTok</a>
+        </div>
+      </div>
+
+      <!-- زر إغلاق المودال -->
+      <button class="qv-close" style="position:absolute; top:10px; right:10px; font-size:24px; background:none; border:none; cursor:pointer;"
+              onclick='this.closest("#quickViewModal").style.display="none"'>×</button>
+    </div>
+  `;
+}
 
   function openQuickView(product){
     localStorage.setItem('currentProduct', JSON.stringify(product));
@@ -104,80 +156,74 @@
   }
 
   /* ---------------- Feed Rendering ---------------- */
- function renderProductsFromFeed(json) {
-  const entries = json.feed.entry || [];
-  const container = qs('#productsContainer');
-  if (!container) return;
-  if (entries.length === 0) {
-    container.innerHTML = "<p>لا توجد منتجات حاليا!</p>";
-    return;
-  }
+  function renderProductsFromFeed(json) {
+    const entries = json.feed.entry || [];
+    const container = qs('#productsContainer');
+    if (!container) return;
+    if (entries.length === 0) {
+      container.innerHTML = "<p>لا توجد منتجات حاليا!</p>";
+      return;
+    }
 
-  container.innerHTML = entries.map(entry => {
-    const title = entry.title.$t;
-    const link = entry.link.find(l => l.rel === 'alternate').href;
-    const content = entry.content.$t;
+    container.innerHTML = entries.map(entry => {
+      const title = entry.title.$t;
+      const link = entry.link.find(l => l.rel === 'alternate').href;
+      const content = entry.content.$t;
 
-    // 🖼️ استخراج الصورة
-    let img = "https://via.placeholder.com/300x220";
-    const regexImg = /<img[^>]+src=['"]([^'"]+)['"]/i;
-    const match = content.match(regexImg);
-    if (match) img = match[1];
+      let img = "https://via.placeholder.com/300x220";
+      const regexImg = /<img[^>]+src=['"]([^'"]+)['"]/i;
+      const match = content.match(regexImg);
+      if (match) img = match[1];
 
-    // 💰 الأسعار
-    const currentPrice = (content.match(/\$([0-9.]+)/) || [])[1];
-    const oldPrice = (content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i) || [])[1];
+      const currentPrice = (content.match(/\$([0-9.]+)/) || [])[1];
+      const oldPrice = (content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i) || [])[1];
 
-    // 🏷️ خصائص إضافية
-    const category = (entry.category && entry.category[0]?.term) || "Uncategorized";
-    const isHot = /Hot/i.test(content);
-    const isSold = /Sold/i.test(content);
-    const isAvailable = /متوفر|available/i.test(content);
-    const badge = isSold ? "Sold" : isHot ? "Hot" : "";
-    const available = isAvailable ? "متوفر" : "غير متوفر";
+      const category = (entry.category && entry.category[0]?.term) || "Uncategorized";
+      const isHot = /Hot/i.test(content);
+      const isSold = /Sold/i.test(content);
+      const isAvailable = /متوفر|available/i.test(content);
+      const badge = isSold ? "Sold" : isHot ? "Hot" : "";
+      const available = isAvailable ? "متوفر" : "غير متوفر";
 
-    const productObj = {
-      id: entry.id?.$t || title,
-      title, link, img,
-      price: currentPrice ? parseFloat(currentPrice) : 0,
-      oldPrice: oldPrice ? parseFloat(oldPrice) : null,
-      category, available, badge,
-      shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
-    };
+      const productObj = {
+        id: entry.id?.$t || title,
+        title, link, img,
+        price: currentPrice ? parseFloat(currentPrice) : 0,
+        oldPrice: oldPrice ? parseFloat(oldPrice) : null,
+        category, available, badge,
+        shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
+      };
 
-    return `
-      <div class='product-card' data-id='${productObj.id}'>
-        ${badge ? `<span class='badge'>${badge}</span>` : ""}
-        <span class='status ${isAvailable ? '' : 'unavailable'}'>${available}</span>
+      return `
+        <div class='product-card' data-id='${productObj.id}'>
+          ${badge ? `<span class='badge'>${badge}</span>` : ""}
+          <span class='status ${isAvailable ? '' : 'unavailable'}'>${available}</span>
 
-        <!-- ❤️ زر المفضلة -->
-        <button class='wishlist-btn' onclick='toggleWishlistFromGrid(${JSON.stringify(productObj)}, false)'>❤️</button>
+          <a class='product-link' href='javascript:void(0)' title="View Details" onclick='openProductDetails(${JSON.stringify(productObj)})'>
+            <img alt='${productObj.title}' class='product-img' src='${productObj.img}'/>
+          </a>
 
-        <a class='product-link' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>
-          <img alt='${productObj.title}' class='product-img' src='${productObj.img}'/>
-        </a>
-
-        <!-- 🛒 أزرار hover -->
-        <div class='card-actions'>
-          <button class='rect-btn add' onclick='addToCartFromGrid(${JSON.stringify(productObj)}, false)'>🛒 add to cart</button>
-          <button class='rect-btn view' onclick='openQuickView(${JSON.stringify(productObj)})'>👁️view</button>
-        </div>
-
-        <div class='product-info'>
-          <div class='product-category'>${productObj.category}</div>
-          <a class='product-name' href='javascript:void(0)' onclick='openProductDetails(${JSON.stringify(productObj)})'>${productObj.title}</a>
-          <div class='price-row'>
-            ${productObj.price ? `<span class='price'>$${productObj.price.toFixed(2)}</span>` : `<span class='price text-muted'>غير متوفر</span>`}
-            ${productObj.oldPrice ? `<span class='old-price'>$${productObj.oldPrice.toFixed(2)}</span>` : ""}
+          <div class='card-actions'>
+            <button class='rect-btn add' title='Add to Cart' onclick='addToCartFromGrid(${JSON.stringify(productObj)}, false)'><i class="fa fa-cart-plus"></i></button>
+            <button class='rect-btn view' title='Quick View' onclick='openQuickView(${JSON.stringify(productObj)})'><i class="fa fa-eye"></i></button>
+            <button class='wishlist-btn' title='Add to Wishlist' onclick='toggleWishlistFromGrid(${JSON.stringify(productObj)}, false)'>❤️</button>
           </div>
-          <div class='rating'>⭐⭐⭐⭐⭐ (25)</div>
-        </div>
-      </div>
-    `;
-  }).join('');
 
-  updateCartCount();
-}
+          <div class='product-info'>
+            <div class='product-category'>${productObj.category}</div>
+            <a class='product-name' href='javascript:void(0)' title="View Details" onclick='openProductDetails(${JSON.stringify(productObj)})'>${productObj.title}</a>
+            <div class='price-row'>
+              ${productObj.price ? `<span class='price'>$${productObj.price.toFixed(2)}</span>` : `<span class='price text-muted'>غير متوفر</span>`}
+              ${productObj.oldPrice ? `<span class='old-price'>$${productObj.oldPrice.toFixed(2)}</span>` : ""}
+            </div>
+            <div class='rating'>⭐⭐⭐⭐⭐ (25)</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    updateCartCount();
+  }
 
   window.renderProductsFromFeed = renderProductsFromFeed;
 
@@ -197,9 +243,20 @@
   /* ---------------- Page Routing ---------------- */
   function routeByURL(){
     const path = window.location.pathname;
-    if(path.includes("/p/cart.html")) qs("#cartPageContainer")?.style.setProperty("display","block");
-    else if(path.includes("/p/wishlist.html")) qs("#wishlistPageContainer")?.style.setProperty("display","block");
-    else if(path.includes("/p/checkout.html")) qs("#checkoutPageContainer")?.style.setProperty("display","block");
+
+    if(path.includes("/p/cart.html")){
+      qs("#cartPageContainer")?.style.setProperty("display","block");
+      const cart = readCart();
+      const container = qs('#cartPageContainer');
+      if(container) container.innerHTML = cart.map(p=>`<div>${p.title} x ${p.quantity}</div>`).join('');
+    }
+
+    else if(path.includes("/p/wishlist.html")){
+      qs("#wishlistPageContainer")?.style.setProperty("display","block");
+      const wish = readWish();
+      const container = qs('#wishlistPageContainer');
+      if(container) container.innerHTML = wish.map(p=>`<div>${p.title}</div>`).join('');
+    }
   }
 
   /* ---------------- Init ---------------- */
