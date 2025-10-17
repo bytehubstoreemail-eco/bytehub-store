@@ -317,7 +317,6 @@
           </a>
           <div class='product-info'>
             <div class='product-category'>${productObj.category}</div>
-            <div class='product-name'>${productObj.title}</div>
             <div class='price-row'>
               <span class='price'>${convertPrice(productObj.price)}</span>
               ${productObj.oldPrice ? `<span class='old-price'>${convertPrice(productObj.oldPrice)}</span>` : ""}
