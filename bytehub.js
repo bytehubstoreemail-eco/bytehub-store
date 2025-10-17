@@ -55,7 +55,8 @@
     if(redirect) window.location.href = '/p/cart.html';
     else alert('✅ تمت إضافة المنتج إلى السلة');
   }
-
+window.addToCartFromGrid = addToCart;
+   
   function toggleWishlist(product, redirect=false){
     const wish = readWish();
     if(!wish.find(p=>p.id===product.id)){
@@ -65,9 +66,10 @@
     }
     if(redirect) window.location.href = '/p/wishlist.html';
   }
+   window.toggleWishlistFromGrid = toggleWishlist;
+   
 const cartBtn = qs('#cartBtn');
 const cartMenu = qs('.cart-menu');
-
 cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
 cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{ if(!cartMenu.matches(':hover')) cartMenu.style.display='none'; }, 200));
 cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display = 'none');
@@ -190,13 +192,34 @@ document.addEventListener('click', e => {
         shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
       };
       return `
-        <div class='product-card' data-product='${encodeURIComponent(JSON.stringify(productObj))}'>
-          <a class='product-link'><img src='${productObj.img}'/></a>
-         <div class='card-actions'>
-  <button class='rect-btn add' title='Add to Cart'><i class="fa fa-cart-plus"></i>Add to Cart</button>
-  <button class='rect-btn view' title='Quick View'><i class="fa fa-eye"></i>View</button>
-  <button class='wishlist-btn' title='Add to Wishlist'><i class="fa fa-heart"></i></button>
+       <div class='product-card' data-product='${encodeURIComponent(JSON.stringify(productObj))}'>
+  <!-- صورة المنتج -->
+  <a class='product-link' href='javascript:void(0)' 
+     onclick='openProductDetails(${JSON.stringify(productObj)})'>
+    <img src='${productObj.img}' alt='${productObj.title}'/>
+  </a>
+  <!-- أزرار التفاعل -->
+  <div class='card-actions'>
+    <button class='rect-btn add' title='Add to Cart' 
+            onclick='addToCart(${JSON.stringify(productObj)}, false)'>
+      <i class="fa fa-cart-plus"></i> Add to Cart
+    </button>
+    <button class='rect-btn view' title='Quick View' 
+            onclick='openQuickView(${JSON.stringify(productObj)})'>
+      <i class="fa fa-eye"></i> View
+    </button>
+    <button class='wishlist-btn' title='Add to Wishlist' 
+            onclick='toggleWishlist(${JSON.stringify(productObj)}, false)'>
+      <i class="fa fa-heart"></i>
+    </button>
+  </div>
+  <!-- اسم المنتج -->
+  <a class='product-name' href='javascript:void(0)' 
+     onclick='openProductDetails(${JSON.stringify(productObj)})'>
+    ${productObj.title}
+  </a>
 </div>
+
 
           <div class='product-info'>
             <div class='product-category'>${productObj.category}</div>
