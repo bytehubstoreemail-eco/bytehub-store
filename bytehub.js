@@ -55,6 +55,42 @@
   await fetchCurrencyRates();
   setCurrencyDropdown();
 })();
+   function injectCurrencyDropdown(){
+  const nav = qs('.nav-right') || qs('header') || document.body;
+  if(!nav || qs('#currencyDropdown')) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'currencyDropdown';
+  wrapper.className = 'currency-dropdown';
+  wrapper.innerHTML = `
+    <button class="currency-toggle">
+      💱 <span id="selectedCurrency">${localStorage.getItem('currency') || 'USD'}</span> <i class="fa fa-chevron-down"></i>
+    </button>
+    <div class="currency-menu" style="display:none">
+      <button data-currency="USD">$ USD</button>
+      <button data-currency="EUR">€ EUR</button>
+      <button data-currency="DZD">دج DZD</button>
+    </div>
+  `;
+  nav.prepend(wrapper);
+
+  const toggle = wrapper.querySelector('.currency-toggle');
+  const menu = wrapper.querySelector('.currency-menu');
+  toggle.addEventListener('click', () => {
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+  });
+
+  wrapper.querySelectorAll('.currency-menu button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const currency = btn.dataset.currency;
+      localStorage.setItem('currency', currency);
+      qs('#selectedCurrency').textContent = currency;
+      menu.style.display = 'none';
+      updateCartDropdown();
+      renderProductsFromFeed(lastFetchedFeed);
+    });
+  });
+}
      /* ---------------- Cart / Wishlist Helpers ---------------- */
   function readCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
   function writeCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
@@ -381,6 +417,7 @@
   document.addEventListener('DOMContentLoaded', ()=>{
     updateCartCount();
     updateCartDropdown();
+     injectCurrencyDropdown();
     const script = document.createElement('script');
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
