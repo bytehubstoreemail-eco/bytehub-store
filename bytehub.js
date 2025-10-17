@@ -433,7 +433,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const qs = s => document.querySelector(s);
 
   // ✅ ربط محتوى صفحة Blogger بالحاوية المخصصة
-  if (window.location.href.includes('/p/checkout.html')) {
+  if (
+  window.location.href.includes('/p/checkout.html') ||
+  document.querySelector('.post-body form#checkoutForm') ||
+  document.querySelector('#checkoutForm')
+) {
     const container = qs('#checkoutPageContainer');
     const postBody = qs('.post-body');
 
