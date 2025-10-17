@@ -52,6 +52,7 @@
     else { product.quantity = product.quantity || 1; cart.push(product); }
     writeCart(cart);
     updateCartCount();
+    updateCartDropdown();
     if(redirect) window.location.href = '/p/cart.html';
     else alert('✅ تمت إضافة المنتج إلى السلة');
   }
@@ -84,6 +85,7 @@ function updateCartDropdown(){
     qs('#cartSubtotal').textContent = "0.00";
     return;
   }
+ 
 
   container.innerHTML = cart.map(p => `
     <div class="cart-item" data-id="${p.id}">
@@ -109,6 +111,36 @@ document.addEventListener('click', e => {
     updateCartDropdown();
   }
 });
+  
+document.addEventListener('DOMContentLoaded', () => {
+    qs('#emptyCart')?.addEventListener('click', ()=>{
+      writeCart([]);
+      updateCartCount();
+      updateCartDropdown();
+    });
+
+    qs('#checkout')?.addEventListener('click', ()=>{
+      window.location.href = '/p/cart.html'; 
+    });
+
+    // تحديث السلة عند تحميل الصفحة
+    updateCartDropdown();
+});
+
+/* ---------------- Dropdown Cart HTML & Events ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  // إنشاء عناصر السلة
+  const cartWrapper = document.createElement('div');
+  cartWrapper.innerHTML = `
+    <button id="cartBtn">🛒 Cart <span id="cartCount">0</span></button>
+    <div class="cart-menu" style="display:none;">
+      <div id="cartItemsContainer"></div>
+      <div>Subtotal: $<span id="cartSubtotal">0.00</span></div>
+      <button id="emptyCart">Empty Cart</button>
+      <button id="checkout"><i class="fa fa-credit-card"></i> Checkout</button>
+    </div>
+  `;
+  document.body.prepend(cartWrapper);
 
   /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
