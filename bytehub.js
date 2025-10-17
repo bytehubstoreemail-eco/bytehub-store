@@ -150,11 +150,12 @@
       return `
         <div class='product-card' data-product='${encodeURIComponent(JSON.stringify(productObj))}'>
           <a class='product-link'><img src='${productObj.img}'/></a>
-          <div class='card-actions'>
-            <button class='rect-btn add'>🛒</button>
-            <button class='rect-btn view'>👁️</button>
-            <button class='wishlist-btn'>❤️</button>
-          </div>
+         <div class='card-actions'>
+  <button class='rect-btn add' title='Add to Cart'><i class="fa fa-cart-plus"></i>Add to Cart</button>
+  <button class='rect-btn view' title='Quick View'><i class="fa fa-eye"></i>View</button>
+  <button class='wishlist-btn' title='Add to Wishlist'><i class="fa fa-heart"></i></button>
+</div>
+
           <div class='product-info'>
             <div class='product-category'>${productObj.category}</div>
             <div class='product-name'>${productObj.title}</div>
