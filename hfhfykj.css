@@ -412,4 +412,11 @@
     width: 200px;
     height: 200px;
   }
+   .product-link img, .product-name {
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+}
+.product-link img:hover { transform: scale(1.05); }
+.product-name:hover { color: #0b2545; text-decoration: underline; 
+}
 }
