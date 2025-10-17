@@ -65,6 +65,48 @@
     }
     if(redirect) window.location.href = '/p/wishlist.html';
   }
+const cartBtn = qs('#cartBtn');
+const cartMenu = qs('.cart-menu');
+
+cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{ if(!cartMenu.matches(':hover')) cartMenu.style.display='none'; }, 200));
+cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display = 'none');
+cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
+function updateCartDropdown(){
+  const container = qs('#cartItemsContainer');
+  const cart = readCart();
+  if(!container) return;
+
+  if(cart.length===0){
+    container.innerHTML = "<p>Cart is empty.</p>";
+    qs('#cartSubtotal').textContent = "0.00";
+    return;
+  }
+
+  container.innerHTML = cart.map(p => `
+    <div class="cart-item" data-id="${p.id}">
+      <img src="${p.img}" alt="${p.title}">
+      <div class="cart-item-info">
+        <div>${p.title}</div>
+        <div>$${p.price.toFixed(2)} x ${p.quantity}</div>
+      </div>
+      <button class="remove-item" title="Remove"><i class="fa fa-trash-o"></i></button>
+    </div>
+  `).join('');
+
+  const subtotal = cart.reduce((s,p)=>s + (p.price*(p.quantity||1)),0);
+  qs('#cartSubtotal').textContent = subtotal.toFixed(2);
+}
+
+// حذف عنصر واحد
+document.addEventListener('click', e => {
+  if(e.target.closest('.remove-item')){
+    const id = e.target.closest('.cart-item').dataset.id;
+    const cart = readCart().filter(p=>p.id!==id);
+    writeCart(cart);
+    updateCartDropdown();
+  }
+});
 
   /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
