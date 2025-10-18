@@ -3,16 +3,21 @@
    Version: 2.0.0 | Author: ByteHub Store
    Description: Product rendering, cart, wishlist, Quick View, currency, and UI actions.
    ========================================================== */
-//  اجعل الدالة عالمية قبل تحميل JSONP
 
-  // تعريف فارغ مؤقت لتجنّب خطأ "renderProductsFromFeed is not defined"
-  window.renderProductsFromFeed = function(json){
-    // سيتم استبدال هذه لاحقًا داخل السكربت الأصلي
-    console.log("🕐 تحميل المنتجات ...");
-  };
 (function(){
   "use strict";
 
+  /* ==========================================================
+      Global Fallback (قبل تحميل JSONP)
+  ========================================================== */
+  // إذا تم استدعاء JSONP قبل تحميل السكربت، نحفظ البيانات مؤقتاً
+  if (!window.renderProductsFromFeed) {
+    window._pendingFeed = null;
+    window.renderProductsFromFeed = function(json){
+      console.log("🕐 تم استقبال بيانات المنتجات قبل تحميل ByteHubStore.js");
+      window._pendingFeed = json;
+    };
+  }
   const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
 
   const qs  = (sel, root=document) => root.querySelector(sel);
