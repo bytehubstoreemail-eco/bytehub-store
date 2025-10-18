@@ -7,10 +7,13 @@
 (function(){
   "use strict";
 
-  /* ==========================================================
-      Global Fallback (قبل تحميل JSONP)
-  ========================================================== */
-  // إذا تم استدعاء JSONP قبل تحميل السكربت، نحفظ البيانات مؤقتاً
+ 
+  const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
+
+  const qs  = (sel, root=document) => root.querySelector(sel);
+  const qsa = (sel, root=document) => Array.from((root||document).querySelectorAll(sel));
+   
+  //  ضمان تعريف الدالة العالمية قبل Blogger JSONP
   if (!window.renderProductsFromFeed) {
     window._pendingFeed = null;
     window.renderProductsFromFeed = function(json){
@@ -18,10 +21,6 @@
       window._pendingFeed = json;
     };
   }
-  const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
-
-  const qs  = (sel, root=document) => root.querySelector(sel);
-  const qsa = (sel, root=document) => Array.from((root||document).querySelectorAll(sel));
 
   let currencyRates = { USD: 1, EUR: 0.92, DZD: 135 };
   const currencySymbols = { USD: "$", EUR: "€", DZD: "دج" };
@@ -434,9 +433,17 @@
     updateCartCount();
     updateCartDropdown();
      injectCurrencyDropdown();
+     
+  // استرجاع بيانات JSONP المحفوظة إن وُجدت
+  if (window._pendingFeed) {
+    console.log("♻️ إعادة عرض المنتجات من البيانات المحفوظة مسبقًا");
+    renderProductsFromFeed(window._pendingFeed);
+    window._pendingFeed = null;
+  } else {
     const script = document.createElement('script');
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
+  }
   });
 
 /* ---------------- Checkout Page JS ---------------- */
