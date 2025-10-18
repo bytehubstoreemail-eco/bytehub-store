@@ -21,7 +21,29 @@
       window._pendingFeed = json;
     };
   }
+    /* ============================
+   Page Context Detector
+============================ */
+function detectPageType() {
+  const path = window.location.pathname.toLowerCase();
 
+  if (path.includes('/p/checkout')) return 'checkout';
+  if (path.includes('/p/cart')) return 'cart';
+  if (path.includes('/p/wishlist')) return 'wishlist';
+  if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
+  
+  // Blogger product pages (individual post)
+  if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
+    return 'product';
+  }
+
+  return 'other';
+}
+
+const PAGE_TYPE = detectPageType();
+console.log('📄 Current Page Type:', PAGE_TYPE);
+   
+     /* ---------------- Currency Handling ---------------- */
   let currencyRates = { USD: 1, EUR: 0.92, DZD: 135 };
   const currencySymbols = { USD: "$", EUR: "€", DZD: "دج" };
 
@@ -106,6 +128,7 @@
     });
   });
 }
+
      /* ---------------- Cart / Wishlist Helpers ---------------- */
   function readCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
   function writeCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
@@ -428,11 +451,6 @@
     cartMenu.style.display = (cartMenu.style.display === 'block') ? 'none' : 'block';
   });
 
-  /* ---------------- Init ---------------- */
-  document.addEventListener('DOMContentLoaded', ()=>{
-    updateCartCount();
-    updateCartDropdown();
-     injectCurrencyDropdown();
      
   // استرجاع بيانات JSONP المحفوظة إن وُجدت
   if (window._pendingFeed) {
@@ -447,7 +465,7 @@
   });
 
 /* ---------------- Checkout Page JS ---------------- */
-document.addEventListener('DOMContentLoaded', () => {
+function initCheckoutPage() {
   const qs = s => document.querySelector(s);
 
   // ✅ ربط محتوى صفحة Blogger بالحاوية المخصصة
@@ -552,6 +570,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 50);
     }
   }
-});
+}
 
+  /* ---------------- Init ---------------- */
+  document.addEventListener('DOMContentLoaded', ()=>{
+    updateCartCount();
+    updateCartDropdown();
+     injectCurrencyDropdown();
+     
+  // تحميل المنتجات فقط في الصفحة الرئيسية
+  if (PAGE_TYPE === 'home') {
+    const script = document.createElement('script');
+    script.src = PRODUCTS_FEED;
+    document.body.appendChild(script);
+  }
+
+  // تفعيل منطق الدفع فقط في صفحة checkout
+  if (PAGE_TYPE === 'checkout') {
+    initCheckoutPage();
+  }
+});
 })();
