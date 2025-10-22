@@ -3,15 +3,11 @@
    Version: 2.0.0 | Author: ByteHub Store
    Description: Product rendering, cart, wishlist, Quick View, currency, and UI actions.
    ========================================================== */
+(function(){ "use strict"; 
+ const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
+ const qs = (sel, root=document) => root.querySelector(sel);
+ const qsa = (sel, root=document) => Array.from((root||document).querySelectorAll(sel));
 
-function()
-{ "use strict";
-
-  const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
-
-  const qs  = (sel, root=document) => root.querySelector(sel);
-  const qsa = (sel, root=document) => Array.from((root||document).querySelectorAll(sel));
-   
   //  ضمان تعريف الدالة العالمية قبل Blogger JSONP
   if (!window.renderProductsFromFeed) {
     window._pendingFeed = null;
