@@ -463,13 +463,11 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
     document.body.appendChild(script);
   }
   });
-
 /* ---------------- Checkout Page JS ---------------- */
 function initCheckoutPage() {
   const qs = s => document.querySelector(s);
 
   // ✅ ربط محتوى صفحة Blogger بالحاوية المخصصة
-  
   const isCheckoutPage =
     window.location.pathname.includes('/p/checkout.html') ||
     qs('.post-body form#checkoutForm') ||
@@ -573,21 +571,23 @@ function initCheckoutPage() {
 }
 
   /* ---------------- Init ---------------- */
-  document.addEventListener('DOMContentLoaded', ()=>{
+  document.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
     updateCartDropdown();
-     injectCurrencyDropdown();
-     
-  // تحميل المنتجات فقط في الصفحة الرئيسية
-  if (PAGE_TYPE === 'home') {
-    const script = document.createElement('script');
-    script.src = PRODUCTS_FEED;
-    document.body.appendChild(script);
-  }
+    injectCurrencyDropdown();
 
-  // تفعيل منطق الدفع فقط في صفحة checkout
-  if (PAGE_TYPE === 'checkout') {
-    initCheckoutPage();
-  }
-});
-})();
+    // تحميل المنتجات فقط في الصفحة الرئيسية
+    if (PAGE_TYPE === 'home') {
+      const script = document.createElement('script');
+      script.src = PRODUCTS_FEED;
+      document.body.appendChild(script);
+    }
+
+    // تفعيل منطق الدفع فقط في صفحة checkout
+    if (PAGE_TYPE === 'checkout') {
+      initCheckoutPage();
+    }
+  }); // <-- تأكد من إغلاق القوس هنا
+
+})(); // <-- التأكد من إغلاق الدالة فورًا في النهاية
+
