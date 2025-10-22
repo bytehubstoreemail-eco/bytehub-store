@@ -579,7 +579,7 @@ function initCheckoutPage() {
     // تحميل المنتجات فقط في الصفحة الرئيسية
     if (PAGE_TYPE === 'home') {
       const script = document.createElement('script');
-      script.src = PRODUCTS_FEED;
+      script.src = PRODUCTS_FEED;   
       document.body.appendChild(script);
     }
 
