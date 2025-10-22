@@ -4,8 +4,8 @@
    Description: Product rendering, cart, wishlist, Quick View, currency, and UI actions.
    ========================================================== */
 
-function initCheckoutPage() { 
-   const qs = s => document.querySelector(s);
+function()
+{ "use strict";
 
   const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
 
