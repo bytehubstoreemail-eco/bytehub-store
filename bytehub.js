@@ -577,12 +577,9 @@ function initCheckoutPage() {
       script.src = PRODUCTS_FEED;   
       document.body.appendChild(script);
     }
-
     // تفعيل منطق الدفع فقط في صفحة checkout
-    if (PAGE_TYPE === 'checkout') {
+       if (PAGE_TYPE === 'checkout') {
       initCheckoutPage();
     }
-  }); // <-- تأكد من إغلاق القوس هنا
-
-})(); // <-- التأكد من إغلاق الدالة فورًا في النهاية
-
+  });
+})();
