@@ -4,11 +4,12 @@
    Description: Product rendering, cart, wishlist, Quick View, currency, and UI actions.
    ========================================================== */
 (function(){ "use strict"; 
- const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
- const qs = (sel, root=document) => root.querySelector(sel);
- const qsa = (sel, root=document) => Array.from((root||document).querySelectorAll(sel));
 
-  //  ضمان تعريف الدالة العالمية قبل Blogger JSONP
+  const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
+  const qs = (sel, root=document) => root.querySelector(sel);
+  const qsa = (sel, root=document) => Array.from((root || document).querySelectorAll(sel));
+
+  // ضمان تعريف الدالة العالمية قبل Blogger JSONP
   if (!window.renderProductsFromFeed) {
     window._pendingFeed = null;
     window.renderProductsFromFeed = function(json){
@@ -16,29 +17,30 @@
       window._pendingFeed = json;
     };
   }
-    /* ============================
-   Page Context Detector
-============================ */
-function detectPageType() {
-  const path = window.location.pathname.toLowerCase();
 
-  if (path.includes('/p/checkout')) return 'checkout';
-  if (path.includes('/p/cart')) return 'cart';
-  if (path.includes('/p/wishlist')) return 'wishlist';
-  if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
+  /* ============================
+   Page Context Detector
+   =========================== */
+  function detectPageType() {
+    const path = window.location.pathname.toLowerCase();
+
+    if (path.includes('/p/checkout')) return 'checkout';
+    if (path.includes('/p/cart')) return 'cart';
+    if (path.includes('/p/wishlist')) return 'wishlist';
+    if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
   
-  // Blogger product pages (individual post)
-  if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
-    return 'product';
+    // Blogger product pages (individual post)
+    if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
+      return 'product';
+    }
+
+    return 'other';
   }
 
-  return 'other';
-}
+  const PAGE_TYPE = detectPageType();
+  console.log('📄 Current Page Type:', PAGE_TYPE);
 
-const PAGE_TYPE = detectPageType();
-console.log('📄 Current Page Type:', PAGE_TYPE);
-   
-     /* ---------------- Currency Handling ---------------- */
+  /* ---------------- Currency Handling ---------------- */
   let currencyRates = { USD: 1, EUR: 0.92, DZD: 135 };
   const currencySymbols = { USD: "$", EUR: "€", DZD: "دج" };
 
@@ -64,8 +66,8 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
 
   function setCurrencyDropdown(){
     const dropdown = qs('#currencyDropdown');
-    if(!dropdown) return;
-    dropdown.innerHTML = ['USD','EUR','DZD'].map(c => `
+    if (!dropdown) return;
+    dropdown.innerHTML = ['USD', 'EUR', 'DZD'].map(c => `
       <button class="currency-option" data-currency="${c}">
         <i class="fa fa-credit-card"></i> ${currencySymbols[c]} ${c}
       </button>
@@ -80,93 +82,94 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
   }
 
   (async function(){
-  await fetchCurrencyRates();
-  setCurrencyDropdown();
-})();
+    await fetchCurrencyRates();
+    setCurrencyDropdown();
+  })();
+
   function injectCurrencyDropdown(){
-  const trackingItem = qsa("li.nav-item").find(li =>
-    li.textContent.includes("Order Tracking")
-  );
+    const trackingItem = qsa("li.nav-item").find(li =>
+      li.textContent.includes("Order Tracking")
+    );
 
-  if (!trackingItem || qs('#currencyDropdown')) return;
+    if (!trackingItem || qs('#currencyDropdown')) return;
 
-  const wrapper = document.createElement('li');
-  wrapper.id = 'currencyDropdown';
-  wrapper.className = 'nav-item currency-dropdown';
-  wrapper.innerHTML = `
-    <button class="currency-toggle nav-link">
-      💱 <span id="selectedCurrency">${localStorage.getItem('currency') || 'USD'}</span> <i class="fa fa-chevron-down"></i>
-    </button>
-    <div class="currency-menu" style="display:none">
-      <button data-currency="USD">$ USD</button>
-      <button data-currency="EUR">€ EUR</button>
-      <button data-currency="DZD">دج DZD</button>
-    </div>
-  `;
+    const wrapper = document.createElement('li');
+    wrapper.id = 'currencyDropdown';
+    wrapper.className = 'nav-item currency-dropdown';
+    wrapper.innerHTML = `
+      <button class="currency-toggle nav-link">
+        💱 <span id="selectedCurrency">${localStorage.getItem('currency') || 'USD'}</span> <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="currency-menu" style="display:none">
+        <button data-currency="USD">$ USD</button>
+        <button data-currency="EUR">€ EUR</button>
+        <button data-currency="DZD">دج DZD</button>
+      </div>
+    `;
 
-  trackingItem.after(wrapper);
+    trackingItem.after(wrapper);
 
-  const toggle = wrapper.querySelector('.currency-toggle');
-  const menu = wrapper.querySelector('.currency-menu');
-  toggle.addEventListener('click', () => {
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-  });
-
-  wrapper.querySelectorAll('.currency-menu button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const currency = btn.dataset.currency;
-      localStorage.setItem('currency', currency);
-      qs('#selectedCurrency').textContent = currency;
-      menu.style.display = 'none';
-      updateCartDropdown();
-      renderProductsFromFeed(lastFetchedFeed);
+    const toggle = wrapper.querySelector('.currency-toggle');
+    const menu = wrapper.querySelector('.currency-menu');
+    toggle.addEventListener('click', () => {
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     });
-  });
-}
 
-     /* ---------------- Cart / Wishlist Helpers ---------------- */
-  function readCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
-  function writeCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-  function readWish(){ return JSON.parse(localStorage.getItem('wishlist') || '[]'); }
+    wrapper.querySelectorAll('.currency-menu button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const currency = btn.dataset.currency;
+        localStorage.setItem('currency', currency);
+        qs('#selectedCurrency').textContent = currency;
+        menu.style.display = 'none';
+        updateCartDropdown();
+        renderProductsFromFeed(lastFetchedFeed);  // تحديث المنتجات مع العملة الجديدة
+      });
+    });
+  }
+
+  /* ---------------- Cart / Wishlist Helpers ---------------- */
+  function readCart() { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+  function writeCart(c) { localStorage.setItem('cart', JSON.stringify(c)); }
+  function readWish() { return JSON.parse(localStorage.getItem('wishlist') || '[]'); }
 
   function updateCartCount(){
     const el = qs('#cartCount');
-    if(el) el.textContent = readCart().reduce((s,i)=>s+(i.quantity||1),0) || 0;
+    if(el) el.textContent = readCart().reduce((s, i) => s + (i.quantity || 1), 0) || 0;
   }
 
   function addToCart(product, redirect=false){
-    if(!product?.id || !product?.price) return;
+    if (!product?.id || !product?.price) return;
     const cart = readCart();
-    const existing = cart.find(p=>p.id===product.id);
-    if(existing) existing.quantity = (existing.quantity||1)+1;
+    const existing = cart.find(p => p.id === product.id);
+    if (existing) existing.quantity = (existing.quantity || 1) + 1;
     else { product.quantity = product.quantity || 1; cart.push(product); }
     writeCart(cart);
     updateCartCount();
     updateCartDropdown();
-    if(redirect) window.location.href = '/p/cart.html';
+    if (redirect) window.location.href = '/p/cart.html';
     else alert('✅ تمت إضافة المنتج إلى السلة');
   }
-   window.addToCart = addToCart;
+  window.addToCart = addToCart;
   window.addToCartFromGrid = addToCart;
 
   function toggleWishlist(product, redirect=false){
-    if(!product?.id) return;
+    if (!product?.id) return;
     const wish = readWish();
-    if(!wish.find(p=>p.id===product.id)){
+    if (!wish.find(p => p.id === product.id)){
       wish.push(product);
       localStorage.setItem('wishlist', JSON.stringify(wish));
       alert('❤️ تمت الإضافة إلى المفضلة');
     }
-    if(redirect) window.location.href = '/p/wishlist.html';
+    if (redirect) window.location.href = '/p/wishlist.html';
   }
   window.toggleWishlistFromGrid = toggleWishlist;
 
   function updateCartDropdown(){
     const container = qs('#cartItemsContainer');
     const cart = readCart();
-    if(!container) return;
+    if (!container) return;
 
-    if(cart.length===0){
+    if (cart.length === 0){
       container.innerHTML = "<p>السلة فارغة</p>";
       qs('#cartSubtotal').textContent = convertPrice(0);
       return;
@@ -190,24 +193,23 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
       </div>
     `).join('');
 
-    const subtotal = cart.reduce((s,p)=>s + (p.price*(p.quantity||1)),0);
+    const subtotal = cart.reduce((s, p) => s + (p.price * (p.quantity || 1)), 0);
     qs('#cartSubtotal').textContent = convertPrice(subtotal);
   }
 
-  // تعديل الكمية أو الحذف
   document.addEventListener('click', e => {
     const item = e.target.closest('.cart-item');
-    if(!item) return;
+    if (!item) return;
     const id = item.dataset.id;
     let cart = readCart();
     const index = cart.findIndex(p => p.id === id);
-    if(index === -1) return;
+    if (index === -1) return;
 
-    if(e.target.closest('.remove-item')){
+    if (e.target.closest('.remove-item')){
       cart.splice(index, 1);
-    } else if(e.target.closest('.qty-btn.plus')){
+    } else if (e.target.closest('.qty-btn.plus')){
       cart[index].quantity = (cart[index].quantity || 1) + 1;
-    } else if(e.target.closest('.qty-btn.minus')){
+    } else if (e.target.closest('.qty-btn.minus')){
       cart[index].quantity = Math.max(1, (cart[index].quantity || 1) - 1);
     } else return;
 
@@ -217,15 +219,16 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
   });
 
   // أزرار Empty / Checkout
-  qs('#emptyCart')?.addEventListener('click', ()=>{
+  qs('#emptyCart')?.addEventListener('click', () => {
     writeCart([]);
     updateCartCount();
     updateCartDropdown();
   });
-  qs('#checkout')?.addEventListener('click', ()=>{
+  qs('#checkout')?.addEventListener('click', () => {
     window.location.href = '/p/checkout.html';
   });
-     /* ---------------- Quick View ---------------- */
+
+  /* ---------------- Quick View ---------------- */
   function openProductDetails(product){
     localStorage.setItem('currentProduct', JSON.stringify(product));
     window.location.href = '/p/product.html';
@@ -233,7 +236,7 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
 
   function renderQuickView(product){
     const modal = qs('#quickViewModal');
-    if(!modal) return;
+    if (!modal) return;
     const colors = product.colors || ["Default"];
     modal.innerHTML = `
       <div class="qv-inner">
@@ -257,7 +260,7 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
           </div>
           <p class="short-desc">${product.shortDesc}</p>
           <div class="product-options">
-            <select id="qvColorSelect">${colors.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+            <select id="qvColorSelect">${colors.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
             <input id="qvQuantity" type="number" min="1" value="1"/>
           </div>
           <div class="qv-actions">
@@ -358,26 +361,27 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
   }
 
   window.renderProductsFromFeed = renderProductsFromFeed;
-     /* ---------------- Event Delegation for Dynamic Buttons ---------------- */
+  
+  /* ---------------- Event Delegation for Dynamic Buttons ---------------- */
   document.addEventListener('click', function(e){
     const card = e.target.closest('.product-card');
-    if(!card) return;
+    if (!card) return;
     const product = JSON.parse(decodeURIComponent(card.dataset.product));
 
-    if(e.target.matches('.rect-btn.add, .rect-btn.add *')) addToCart(product);
-    if(e.target.matches('.rect-btn.view, .rect-btn.view *')) openQuickView(product);
-    if(e.target.matches('.wishlist-btn, .wishlist-btn *')) toggleWishlist(product);
+    if (e.target.matches('.rect-btn.add, .rect-btn.add *')) addToCart(product);
+    if (e.target.matches('.rect-btn.view, .rect-btn.view *')) openQuickView(product);
+    if (e.target.matches('.wishlist-btn, .wishlist-btn *')) toggleWishlist(product);
   });
 
   /* ---------------- Quick View Close ---------------- */
   document.addEventListener('click', e => {
-    if(e.target.matches('.qv-close')) e.target.closest('#quickViewModal').style.display='none';
+    if (e.target.matches('.qv-close')) e.target.closest('#quickViewModal').style.display = 'none';
   });
 
   /* ---------------- Search Functionality ---------------- */
   const searchInput = qs('#searchInput');
   const searchBtn = qs('#searchBtn');
-  if(searchInput){
+  if (searchInput){
     const filterProducts = () => {
       const query = searchInput.value.toLowerCase();
       qsa('.product-card').forEach(card => {
@@ -402,14 +406,14 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
   qs('#themeToggle')?.addEventListener('click', () => {
     document.body.classList.toggle('dark');
     const root = document.documentElement;
-    if(document.body.classList.contains('dark')){
-      root.style.setProperty('--primary','#071428');
-      root.style.setProperty('--card-bg','#0f1724');
-      root.style.setProperty('--text','#e6eef8');
+    if (document.body.classList.contains('dark')) {
+      root.style.setProperty('--primary', '#071428');
+      root.style.setProperty('--card-bg', '#0f1724');
+      root.style.setProperty('--text', '#e6eef8');
     } else {
-      root.style.setProperty('--primary','#0b2545');
-      root.style.setProperty('--card-bg','#fff');
-      root.style.setProperty('--text','#222');
+      root.style.setProperty('--primary', '#0b2545');
+      root.style.setProperty('--card-bg', '#fff');
+      root.style.setProperty('--text', '#222');
     }
   });
 
@@ -419,7 +423,7 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
 
   const cartBtn = qs('#cartBtn');
   let cartMenu = qs('#cartDropdown');
-  if(!cartMenu){
+  if (!cartMenu) {
     cartMenu = document.createElement('div');
     cartMenu.id = 'cartDropdown';
     cartMenu.style.display = 'none';
@@ -436,17 +440,16 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
     cartBtn.after(cartMenu);
   }
 
-  cartBtn.addEventListener('mouseenter', ()=> cartMenu.style.display = 'block');
-  cartBtn.addEventListener('mouseleave', ()=> setTimeout(()=>{
-    if(!cartMenu.matches(':hover')) cartMenu.style.display='none';
-  },200));
-  cartMenu.addEventListener('mouseenter', ()=> cartMenu.style.display='block');
-  cartMenu.addEventListener('mouseleave', ()=> cartMenu.style.display='none');
-  cartBtn.addEventListener('click', ()=> {
+  cartBtn.addEventListener('mouseenter', () => cartMenu.style.display = 'block');
+  cartBtn.addEventListener('mouseleave', () => setTimeout(() => {
+    if (!cartMenu.matches(':hover')) cartMenu.style.display = 'none';
+  }, 200));
+  cartMenu.addEventListener('mouseenter', () => cartMenu.style.display = 'block');
+  cartMenu.addEventListener('mouseleave', () => cartMenu.style.display = 'none');
+  cartBtn.addEventListener('click', () => {
     cartMenu.style.display = (cartMenu.style.display === 'block') ? 'none' : 'block';
   });
 
-     
   // استرجاع بيانات JSONP المحفوظة إن وُجدت
   if (window._pendingFeed) {
     console.log("♻️ إعادة عرض المنتجات من البيانات المحفوظة مسبقًا");
@@ -457,113 +460,109 @@ console.log('📄 Current Page Type:', PAGE_TYPE);
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
   }
-  });
-/* ---------------- Checkout Page JS ---------------- */
-function initCheckoutPage() {
-  const qs = s => document.querySelector(s);
 
-  // ✅ ربط محتوى صفحة Blogger بالحاوية المخصصة
-  const isCheckoutPage =
-    window.location.pathname.includes('/p/checkout.html') ||
-    qs('.post-body form#checkoutForm') ||
-    qs('#checkoutForm');
+  /* ---------------- Checkout Page JS ---------------- */
+  function initCheckoutPage() {
+    const qs = s => document.querySelector(s);
 
-  if (isCheckoutPage) {
-    const container = qs('#checkoutPageContainer');
-    const postBody = qs('.post-body');
+    const isCheckoutPage = window.location.pathname.includes('/p/checkout.html') || qs('.post-body form#checkoutForm') || qs('#checkoutForm');
 
-    if (container && postBody) {
-      container.innerHTML = postBody.innerHTML;
-      container.style.display = 'block';
-      postBody.style.display = 'none';
+    if (isCheckoutPage) {
+      const container = qs('#checkoutPageContainer');
+      const postBody = qs('.post-body');
 
-      setTimeout(() => {
-        const checkoutForm = qs('#checkoutForm');
-        const orderDetailsContainer = qs('#orderDetails');
-        const thankYouMessage = qs('#thankYouMessage');
+      if (container && postBody) {
+        container.innerHTML = postBody.innerHTML;
+        container.style.display = 'block';
+        postBody.style.display = 'none';
 
-        if (!checkoutForm) return;
+        setTimeout(() => {
+          const checkoutForm = qs('#checkoutForm');
+          const orderDetailsContainer = qs('#orderDetails');
+          const thankYouMessage = qs('#thankYouMessage');
 
-        const cart = readCart();
-        const cartReviewContainer = qs('#checkoutItemsContainer');
-        const subtotalEl = qs('#checkoutSubtotal');
+          if (!checkoutForm) return;
 
-        if (cartReviewContainer) {
-          cartReviewContainer.innerHTML = cart.length
-            ? cart.map(i => `
-                <div class="checkout-item">
-                  <span>${i.title} × ${i.quantity}</span>
-                  <span>${convertPrice(i.price * i.quantity)}</span>
-                </div>
-              `).join('')
-            : "<p>السلة فارغة</p>";
-        }
+          const cart = readCart();
+          const cartReviewContainer = qs('#checkoutItemsContainer');
+          const subtotalEl = qs('#checkoutSubtotal');
 
-        if (subtotalEl) {
-          const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          subtotalEl.textContent = convertPrice(subtotal);
-        }
-
-        checkoutForm.addEventListener('submit', e => {
-          e.preventDefault();
-
-          if (cart.length === 0) {
-            alert('السلة فارغة!');
-            return;
+          if (cartReviewContainer) {
+            cartReviewContainer.innerHTML = cart.length
+              ? cart.map(i => `
+                  <div class="checkout-item">
+                    <span>${i.title} × ${i.quantity}</span>
+                    <span>${convertPrice(i.price * i.quantity)}</span>
+                  </div>
+                `).join('')
+              : "<p>السلة فارغة</p>";
           }
 
-          const customer = {
-            name: qs('#customerName').value,
-            email: qs('#customerEmail').value,
-            phone: qs('#customerPhone').value,
-            address: qs('#customerAddress').value,
-            city: qs('#customerCity').value,
-            postcode: qs('#customerPostcode').value,
-            payment: qs('#paymentMethod').value
-          };
-
-          if (!customer.name || !customer.email || !customer.phone || !customer.address) {
-            alert('يرجى ملء جميع الحقول المطلوبة');
-            return;
+          if (subtotalEl) {
+            const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+            subtotalEl.textContent = convertPrice(subtotal);
           }
 
-          const orderId = Math.floor(Math.random() * 1e11);
-          const orderTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+          checkoutForm.addEventListener('submit', e => {
+            e.preventDefault();
 
-          const orderHTML = `
-            <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
-            <p><strong>رقم الطلب:</strong> ${orderId}</p>
-            <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
-            <p><strong>الإجمالي:</strong> ${convertPrice(orderTotal)}</p>
-            <h4>تفاصيل الطلب:</h4>
-            <ul>
-              ${cart.map(i => `<li>${i.title} × ${i.quantity} = ${convertPrice(i.price * i.quantity)}</li>`).join('')}
-            </ul>
-            <h4>تفاصيل العميل:</h4>
-            <p>الاسم: ${customer.name}</p>
-            <p>البريد: ${customer.email}</p>
-            <p>الهاتف: ${customer.phone}</p>
-            <p>العنوان: ${customer.address}</p>
-            <p>المدينة: ${customer.city}</p>
-            <p>الرمز البريدي: ${customer.postcode}</p>
-            <button id="printOrder">طباعة الطلب</button>
-          `;
+            if (cart.length === 0) {
+              alert('السلة فارغة!');
+              return;
+            }
 
-          orderDetailsContainer.innerHTML = orderHTML;
-          thankYouMessage.style.display = 'block';
-          checkoutForm.style.display = 'none';
+            const customer = {
+              name: qs('#customerName').value,
+              email: qs('#customerEmail').value,
+              phone: qs('#customerPhone').value,
+              address: qs('#customerAddress').value,
+              city: qs('#customerCity').value,
+              postcode: qs('#customerPostcode').value,
+              payment: qs('#paymentMethod').value
+            };
 
-          localStorage.setItem('cart', '[]');
-          qs('#cartCount') && (qs('#cartCount').textContent = "0");
+            if (!customer.name || !customer.email || !customer.phone || !customer.address) {
+              alert('يرجى ملء جميع الحقول المطلوبة');
+              return;
+            }
 
-          qs('#printOrder')?.addEventListener('click', () => {
-            window.print();
+            const orderId = Math.floor(Math.random() * 1e11);
+            const orderTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+            const orderHTML = `
+              <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
+              <p><strong>رقم الطلب:</strong> ${orderId}</p>
+              <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>الإجمالي:</strong> ${convertPrice(orderTotal)}</p>
+              <h4>تفاصيل الطلب:</h4>
+              <ul>
+                ${cart.map(i => `<li>${i.title} × ${i.quantity} = ${convertPrice(i.price * i.quantity)}</li>`).join('')}
+              </ul>
+              <h4>تفاصيل العميل:</h4>
+              <p>الاسم: ${customer.name}</p>
+              <p>البريد: ${customer.email}</p>
+              <p>الهاتف: ${customer.phone}</p>
+              <p>العنوان: ${customer.address}</p>
+              <p>المدينة: ${customer.city}</p>
+              <p>الرمز البريدي: ${customer.postcode}</p>
+              <button id="printOrder">طباعة الطلب</button>
+            `;
+
+            orderDetailsContainer.innerHTML = orderHTML;
+            thankYouMessage.style.display = 'block';
+            checkoutForm.style.display = 'none';
+
+            localStorage.setItem('cart', '[]');
+            qs('#cartCount') && (qs('#cartCount').textContent = "0");
+
+            qs('#printOrder')?.addEventListener('click', () => {
+              window.print();
+            });
           });
-        });
-      }, 50);
+        }, 50);
+      }
     }
   }
-}
 
   /* ---------------- Init ---------------- */
   document.addEventListener('DOMContentLoaded', () => {
@@ -577,9 +576,11 @@ function initCheckoutPage() {
       script.src = PRODUCTS_FEED;   
       document.body.appendChild(script);
     }
+    
     // تفعيل منطق الدفع فقط في صفحة checkout
-       if (PAGE_TYPE === 'checkout') {
+    if (PAGE_TYPE === 'checkout') {
       initCheckoutPage();
     }
-  
+  });
+
 })();
