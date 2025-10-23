@@ -581,5 +581,5 @@ function initCheckoutPage() {
        if (PAGE_TYPE === 'checkout') {
       initCheckoutPage();
     }
-  });
+  
 })();
