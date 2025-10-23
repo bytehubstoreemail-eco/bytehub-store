@@ -463,9 +463,10 @@
 
   /* ---------------- Checkout Page JS ---------------- */
   function initCheckoutPage() {
+     console.log("تهيئة صفحة Checkout");
     const qs = s => document.querySelector(s);
 
-    const isCheckoutPage = window.location.pathname.includes('/p/checkout.html') || qs('.post-body form#checkoutForm') || qs('#checkoutForm');
+    const isCheckoutPage = window.location.pathname.includes('/p/checkout.html') && qs('.post-body form#checkoutForm') || qs('#checkoutForm');
 
     if (isCheckoutPage) {
       const container = qs('#checkoutPageContainer');
@@ -619,11 +620,6 @@ function detectPageType() {
   return 'other';
 }
 
-// دالة تهيئة صفحة Checkout
-function initCheckoutPage() {
-  // أي منطق يتعلق بصفحة الـ Checkout هنا
-  console.log("تهيئة صفحة Checkout");
-}
 
 // دالة تهيئة صفحة Wishlist
 function initWishlistPage() {
