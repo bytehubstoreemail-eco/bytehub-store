@@ -299,6 +299,11 @@
       cartMenu.style.display = 'block';
     });
   }
+            
+  // إعادة القفل بعد فترة قصيرة
+  setTimeout(() => {
+    isAdding = false;
+  }, 500);
 
   function openQuickView(product){
     localStorage.setItem('currentProduct', JSON.stringify(product));
