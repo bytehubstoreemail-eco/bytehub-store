@@ -476,7 +476,10 @@
         container.innerHTML = postBody.innerHTML;
         container.style.display = 'block';
         postBody.style.display = 'none';
-
+             
+    // تحديث عداد السلة وDropdown عند الدخول للصفحة
+    updateCartCount();
+    updateCartDropdown();
         setTimeout(() => {
           const checkoutForm = qs('#checkoutForm');
           const orderDetailsContainer = qs('#orderDetails');
