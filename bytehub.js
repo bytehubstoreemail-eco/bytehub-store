@@ -564,23 +564,141 @@
     }
   }
 
-  /* ---------------- Init ---------------- */
-  document.addEventListener('DOMContentLoaded', () => {
-    updateCartCount();
-    updateCartDropdown();
-    injectCurrencyDropdown();
+ /* ---------------- Init ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  // تحديد نوع الصفحة بناءً على المسار
+  const PAGE_TYPE = detectPageType();
 
-    // تحميل المنتجات فقط في الصفحة الرئيسية
-    if (PAGE_TYPE === 'home') {
-      const script = document.createElement('script');
-      script.src = PRODUCTS_FEED;   
-      document.body.appendChild(script);
-    }
-    
-    // تفعيل منطق الدفع فقط في صفحة checkout
-    if (PAGE_TYPE === 'checkout') {
-      initCheckoutPage();
-    }
+  // تحديث العداد والقائمة المنسدلة الخاصة بالسلة والعملات
+  updateCartCount();
+  updateCartDropdown();
+  injectCurrencyDropdown();
+
+  // تحميل المنتجات فقط في الصفحة الرئيسية
+  if (PAGE_TYPE === 'home') {
+    const script = document.createElement('script');
+    script.src = PRODUCTS_FEED;   
+    document.body.appendChild(script);
+  }
+
+  // تهيئة صفحة الـ Checkout
+  if (PAGE_TYPE === 'checkout') {
+    initCheckoutPage();
+  }
+
+  // تهيئة صفحة الـ Wishlist
+  if (PAGE_TYPE === 'wishlist') {
+    initWishlistPage();
+  }
+
+  // تهيئة صفحة الـ Product
+  if (PAGE_TYPE === 'product') {
+    initProductPage();
+  }
+
+  // تهيئة صفحة الـ Cart
+  if (PAGE_TYPE === 'cart') {
+    initCartPage();
+  }
+});
+
+// دالة لتحديد نوع الصفحة بناءً على المسار
+function detectPageType() {
+  const path = window.location.pathname.toLowerCase();
+
+  if (path.includes('/p/checkout')) return 'checkout';
+  if (path.includes('/p/cart')) return 'cart';  // صفحة الـ Cart
+  if (path.includes('/p/wishlist')) return 'wishlist';
+  if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
+  
+  // صفحات المنتجات (المنشور الفردي)
+  if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
+    return 'product';
+  }
+
+  return 'other';
+}
+
+// دالة تهيئة صفحة Checkout
+function initCheckoutPage() {
+  // أي منطق يتعلق بصفحة الـ Checkout هنا
+  console.log("تهيئة صفحة Checkout");
+}
+
+// دالة تهيئة صفحة Wishlist
+function initWishlistPage() {
+  // أي منطق يتعلق بصفحة الـ Wishlist هنا
+  console.log("تهيئة صفحة Wishlist");
+}
+
+// دالة تهيئة صفحة Product
+function initProductPage() {
+  // أي منطق يتعلق بصفحة الـ Product هنا
+  console.log("تهيئة صفحة Product");
+}
+
+// دالة تهيئة صفحة Cart
+function initCartPage() {
+  // هنا يجب إضافة منطق السلة
+  console.log("تهيئة صفحة Cart");
+
+  // يمكن استدعاء دوال مثل:
+  renderCartItems();  // عرض العناصر المضافة إلى السلة
+  updateCartTotal();  // تحديث إجمالي السلة
+  handleCartActions(); // التعامل مع الأزرار مثل الحذف أو تغيير الكمية
+}
+
+// دوال أخرى تتعلق بالسلة يمكن إضافتها:
+
+// عرض العناصر المضافة إلى السلة
+function renderCartItems() {
+  const cart = readCart(); // قراءة محتويات السلة من الـ localStorage
+  const container = document.getElementById('cartItemsContainer');
+
+  if (cart.length === 0) {
+    container.innerHTML = "<p>السلة فارغة</p>";
+  } else {
+    container.innerHTML = cart.map(item => `
+      <div class="cart-item">
+        <img src="${item.img}" alt="${item.title}">
+        <div class="cart-item-details">
+          <h5>${item.title}</h5>
+          <p>الكمية: ${item.quantity}</p>
+          <p>السعر: ${convertPrice(item.price * item.quantity)}</p>
+          <button class="remove-item" data-id="${item.id}">حذف</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// تحديث إجمالي السلة
+function updateCartTotal() {
+  const cart = readCart();
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotalElement = document.getElementById('cartSubtotal');
+  subtotalElement.textContent = convertPrice(total);
+}
+
+// التعامل مع الأزرار مثل الحذف أو تعديل الكمية
+function handleCartActions() {
+  document.querySelectorAll('.remove-item').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const itemId = e.target.getAttribute('data-id');
+      removeItemFromCart(itemId);
+    });
   });
+
+  // إضافة أي وظائف أخرى مثل تعديل الكمية أو إفراغ السلة.
+}
+
+// إزالة عنصر من السلة
+function removeItemFromCart(itemId) {
+  let cart = readCart();
+  cart = cart.filter(item => item.id !== itemId);
+  writeCart(cart);
+  renderCartItems();
+  updateCartTotal();
+}
 
 })();
