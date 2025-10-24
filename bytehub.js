@@ -639,24 +639,6 @@ if (PAGE_TYPE === 'home' || PAGE_TYPE === 'category') {
   }
 });
 
-// دالة لتحديد نوع الصفحة بناءً على المسار
-function detectPageType() {
-  const path = window.location.pathname.toLowerCase();
-
-  if (path.includes('/p/checkout')) return 'checkout';
-  if (path.includes('/p/cart')) return 'cart';  // صفحة الـ Cart
-  if (path.includes('/p/wishlist')) return 'wishlist';
-  if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
-  
-  // صفحات المنتجات (المنشور الفردي)
-  if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
-    return 'product';
-  }
-
-  return 'other';
-}
-
-
 // دالة تهيئة صفحة Wishlist
 function initWishlistPage() {
   // أي منطق يتعلق بصفحة الـ Wishlist هنا
