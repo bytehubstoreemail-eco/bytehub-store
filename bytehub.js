@@ -494,6 +494,25 @@ function initCheckoutPage() {
 
   // قراءة محتويات السلة
   const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+   // دالة لعرض السلة المنسدلة
+function cartMenu() {
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  const cartDropdown = document.querySelector('#cartDropdown'); // حدد حاوية السلة المنسدلة
+
+  if (cartDropdown) {
+    if (cart.length === 0) {
+      cartDropdown.innerHTML = '<p>السلة فارغة</p>';
+    } else {
+      cartDropdown.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <span>${item.title} × ${item.quantity}</span>
+          <span>${item.price.toLocaleString()} ر.س</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
 
   // 🧱 عرض هيكل الصفحة دائمًا
   if (cart.length === 0) {
