@@ -461,12 +461,11 @@
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
   }
-
-  /* ---------------- Checkout Page JS ---------------- */
+/* ---------------- Checkout Page JS ---------------- */
 function initCheckoutPage() {
-  console.log("تهيئة صفحة Checkout");
-  const qs = s => document.querySelector(s);
+  console.log("🛒 تهيئة صفحة Checkout");
 
+  const qs = s => document.querySelector(s);
   const checkoutForm = qs('#checkoutForm');
   const cartReviewContainer = qs('#checkoutItemsContainer');
   const subtotalEl = qs('#checkoutSubtotal');
@@ -474,43 +473,103 @@ function initCheckoutPage() {
 
   if (!checkoutForm || !cartReviewContainer || !subtotalEl) return;
 
+  // إنشاء حاوية للرسائل داخل النموذج
+  let messageContainer = qs('#checkoutMessageContainer');
+  if (!messageContainer) {
+    messageContainer = document.createElement('div');
+    messageContainer.id = 'checkoutMessageContainer';
+    messageContainer.style.cssText = `
+      color: white; 
+      background-color: red; 
+      padding: 10px; 
+      margin-bottom: 10px; 
+      text-align: center; 
+      display: none; 
+      font-weight: bold; 
+      opacity: 0; 
+      transition: opacity 0.5s ease-in-out;
+    `;
+    checkoutForm.prepend(messageContainer);
+  }
+
   // قراءة محتويات السلة
   const cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
-  // عرض المنتجات
-  cartReviewContainer.innerHTML = cart.length ? cart.map(i => `
-    <div class="checkout-item">
-      <span>${i.title} × ${i.quantity}</span>
-      <span>${i.price.toLocaleString()} ر.س</span>
-    </div>
-  `).join('') : "<p>السلة فارغة</p>";
+  // 🧱 عرض هيكل الصفحة دائمًا
+  if (cart.length === 0) {
+    cartReviewContainer.innerHTML = `
+      <p style="color: red; font-weight: bold; text-align:center;">
+        🛍️ السلة فارغة حاليًا.
+      </p>
+    `;
+    subtotalEl.textContent = "0.00 ر.س";
+  } else {
+    cartReviewContainer.innerHTML = cart.map(i => `
+      <div class="checkout-item">
+        <span>${i.title} × ${i.quantity}</span>
+        <span>${i.price.toLocaleString()} ر.س</span>
+      </div>
+    `).join('');
+    const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    subtotalEl.textContent = subtotal.toLocaleString() + " ر.س";
+  }
 
-  // حساب الإجمالي
-  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  subtotalEl.textContent = subtotal.toLocaleString() + " ر.س";
+  // دالة لعرض الرسالة بشكل fade in/out
+  function showMessage(msg) {
+    messageContainer.textContent = msg;
+    messageContainer.style.display = 'block';
+    setTimeout(() => messageContainer.style.opacity = 1, 50); // fade in
 
-  // التعامل مع إرسال الطلب
+    setTimeout(() => {
+      messageContainer.style.opacity = 0; // fade out
+      setTimeout(() => messageContainer.style.display = 'none', 500);
+    }, 10000); // 10 ثواني
+  }
+
+  // 🧩 التعامل مع تقديم الطلب
   checkoutForm.addEventListener('submit', e => {
     e.preventDefault();
-    if (cart.length === 0) { alert("السلة فارغة!"); return; }
 
+    const cartNow = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    // إذا كانت السلة فارغة → عرض رسالة
+    if (cartNow.length === 0) {
+      showMessage("⚠️ يرجى إضافة منتج إلى السلة قبل إتمام الطلب.");
+      return; // ⛔ إيقاف العملية
+    }
+
+    // التحقق من جميع الحقول (Required)
+    const fields = [
+      {el: qs('#customerName'), name: 'الاسم'},
+      {el: qs('#customerEmail'), name: 'البريد الإلكتروني'},
+      {el: qs('#customerPhone'), name: 'رقم الهاتف'},
+      {el: qs('#customerAddress'), name: 'العنوان'},
+      {el: qs('#customerCity'), name: 'المدينة'},
+      {el: qs('#customerPostcode'), name: 'الرمز البريدي'},
+      {el: qs('#paymentMethod'), name: 'طريقة الدفع'}
+    ];
+
+    for (let f of fields) {
+      if (!f.el.value.trim()) {
+        showMessage(`⚠️ يرجى ملء حقل ${f.name}.`);
+        f.el.focus();
+        return; // إيقاف العملية
+      }
+    }
+
+    // إنشاء بيانات الطلب
     const customer = {
-      name: qs('#customerName').value,
-      email: qs('#customerEmail').value,
-      phone: qs('#customerPhone').value,
-      address: qs('#customerAddress').value,
+      name: qs('#customerName').value.trim(),
+      email: qs('#customerEmail').value.trim(),
+      phone: qs('#customerPhone').value.trim(),
+      address: qs('#customerAddress').value.trim(),
       city: qs('#customerCity').value,
-      postcode: qs('#customerPostcode').value,
+      postcode: qs('#customerPostcode').value.trim(),
       payment: qs('#paymentMethod').value
     };
 
-    if (!customer.name || !customer.email || !customer.phone || !customer.address) {
-      alert('يرجى ملء جميع الحقول المطلوبة');
-      return;
-    }
-
     const orderId = Math.floor(Math.random() * 1e11);
-    const orderTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const orderTotal = cartNow.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     qs('#orderDetails').innerHTML = `
       <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
@@ -518,7 +577,7 @@ function initCheckoutPage() {
       <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
       <p><strong>الإجمالي:</strong> ${orderTotal.toLocaleString()} ر.س</p>
       <ul>
-        ${cart.map(i => `<li>${i.title} × ${i.quantity} = ${i.price.toLocaleString()} ر.س</li>`).join('')}
+        ${cartNow.map(i => `<li>${i.title} × ${i.quantity} = ${i.price.toLocaleString()} ر.س</li>`).join('')}
       </ul>
       <p>الاسم: ${customer.name}</p>
       <p>البريد: ${customer.email}</p>
@@ -532,13 +591,14 @@ function initCheckoutPage() {
     thankYouMessage.style.display = 'block';
     checkoutForm.style.display = 'none';
 
+    // تفريغ السلة بعد الطلب
     localStorage.setItem('cart', '[]');
     qs('#cartCount') && (qs('#cartCount').textContent = "0");
 
     qs('#printOrder')?.addEventListener('click', () => window.print());
+  });
+}
 
-            });
-  }
 
  /* ---------------- Init ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
@@ -550,12 +610,13 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartDropdown();
   injectCurrencyDropdown();
 
-  // تحميل المنتجات فقط في الصفحة الرئيسية
-  if (PAGE_TYPE === 'home') {
-    const script = document.createElement('script');
-    script.src = PRODUCTS_FEED;   
-    document.body.appendChild(script);
-  }
+  // تحميل المنتجات فقط في الصفحة الرئيسية أو صفحة التصنيف
+if (PAGE_TYPE === 'home' || PAGE_TYPE === 'category') {
+  const script = document.createElement('script');
+  script.src = PRODUCTS_FEED;
+  document.body.appendChild(script);
+}
+
 
   // تهيئة صفحة الـ Checkout
   if (PAGE_TYPE === 'checkout') {
