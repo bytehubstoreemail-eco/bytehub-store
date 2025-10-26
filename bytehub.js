@@ -473,18 +473,31 @@
     if (!entries.length) { container.innerHTML = "<p>لا توجد منتجات حاليا!</p>"; return; }
 
     container.innerHTML = entries.map(entry => {
-      const title = entry.title.$t;
-      const content = entry.content.$t;
-      let img = (content.match(/<img[^>]+src=['"]([^'"]+)['"]/i)||[])[1] || "https://via.placeholder.com/300x220";
-      const currentPrice = parseFloat((content.match(/\$([0-9.]+)/)||[])[1]||0);
-      const oldPrice = parseFloat((content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i)||[])[1]||0);
-      const category = (entry.category && entry.category[0]?.term) || "غير مصنف";
-      const productObj = {
-        id: entry.id?.$t || title,
-        title, img, price: currentPrice, oldPrice,
-        category,
-        shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0,150)
-      };
+  const title = entry.title.$t;
+  const content = entry.content.$t;
+  let img = (content.match(/<img[^>]+src=['"]([^'"]+)['"]/i) || [])[1] || "https://via.placeholder.com/300x220";
+  const currentPrice = parseFloat((content.match(/\$([0-9.]+)/) || [])[1] || 0);
+  const oldPrice = parseFloat((content.match(/~\$?([0-9.]+)~|<del>\$?([0-9.]+)<\/del>/i) || [])[1] || 0);
+  const category = (entry.category && entry.category[0]?.term) || "غير مصنف";
+  
+  // توليد المفتاح الفريد باستخدام الوقت (timestamp) و القيمة العشوائية
+  function generateUniqueId() {
+    const timestamp = Date.now(); // الوقت الحالي
+    const randomValue = Math.floor(Math.random() * 1000000); // قيمة عشوائية
+    return `${timestamp}-${randomValue}`;
+  }
+
+  const productObj = {
+    id: generateUniqueId(), // استخدام المفتاح الفريد
+    title,
+    img,
+    price: currentPrice,
+    oldPrice,
+    category,
+    shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0, 150)
+  };
+});
+
       // استخدم مَعْدِل التشفير في الأعلى: openProductDetails و openQuickView يعملان بشكل async
       return `
         <div class='product-card' data-product='${safeJsonEncode(productObj)}'>
