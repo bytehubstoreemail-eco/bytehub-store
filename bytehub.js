@@ -496,7 +496,7 @@
     category,
     shortDesc: content.replace(/(<([^>]+)>)/ig, "").slice(0, 150)
   };
-});
+
 
       // استخدم مَعْدِل التشفير في الأعلى: openProductDetails و openQuickView يعملان بشكل async
       return `
