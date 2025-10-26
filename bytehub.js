@@ -3,6 +3,7 @@
    Version: 2.0.0-mod | Author: ByteHub Store (modified)
    Note: Uses IndexedDB (objectStore: 'kv') and Web Crypto AES-GCM encryption
    ========================================================== */
+const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
 (function(){ "use strict";
             
   /* ------------------ Helpers & Selectors ------------------ */
