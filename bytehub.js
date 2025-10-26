@@ -668,172 +668,165 @@
 
   /* ---------------- end Part 2 ---------------- */
   /* ---------------- Checkout Page JS ---------------- */
-  async function initCheckoutPage() {
+async function initCheckoutPage() {
     console.log("🛒 تهيئة صفحة Checkout");
 
     // قراءة محتويات السلة من IndexedDB
     const cart = await readCart();
 
-    // دالة لعرض السلة المنسدلة
-    async function cartMenu() {
-      const cart = await readCart();
-      const cartDropdown = document.querySelector('#cartDropdown'); // حاوية السلة المنسدلة
-
-      if (cartDropdown) {
-        if (cart.length === 0) {
-          cartDropdown.innerHTML = '<p>السلة فارغة</p>';
-        } else {
-          cartDropdown.innerHTML = cart.map(item => `
-            <div class="cart-item">
-              <span>${item.title} × ${item.quantity}</span>
-              <span>${item.price.toLocaleString()} ر.س</span>
-            </div>
-          `).join('');
-        }
-      }
-    }
-
     const qsLocal = s => document.querySelector(s);
-    const checkoutForm = qsLocal('#checkoutForm');
+    const checkoutFormContainer = qsLocal('#checkoutFormContainer'); // حاوية النموذج في صفحة الدفع
     const cartReviewContainer = qsLocal('#checkoutItemsContainer');
     const subtotalEl = qsLocal('#checkoutSubtotal');
     const thankYouMessage = qsLocal('#thankYouMessage');
 
-    if (!checkoutForm || !cartReviewContainer || !subtotalEl) return;
+    if (!checkoutFormContainer || !cartReviewContainer || !subtotalEl) return;
 
-    // إنشاء حاوية للرسائل داخل النموذج
-    let messageContainer = qsLocal('#checkoutMessageContainer');
-    if (!messageContainer) {
-      messageContainer = document.createElement('div');
-      messageContainer.id = 'checkoutMessageContainer';
-      messageContainer.style.cssText = `
-        color: white; 
-        background-color: red; 
-        padding: 10px; 
-        margin-bottom: 10px; 
-        text-align: center; 
-        display: none; 
-        font-weight: bold; 
-        opacity: 0; 
-        transition: opacity 0.5s ease-in-out;
-      `;
-      checkoutForm.prepend(messageContainer);
+    // دالة لتحميل النموذج من صفحة منفصلة
+    async function loadCheckoutForm() {
+        try {
+            const response = await fetch('checkout-form.html'); // استبدل بالمسار الفعلي للنموذج
+            if (!response.ok) throw new Error('لم يتم تحميل النموذج');
+            const formHTML = await response.text();
+
+            // إضافة النموذج إلى الصفحة
+            checkoutFormContainer.innerHTML = formHTML;
+
+            // إضافة الحدث عند تقديم الطلب
+            const checkoutForm = qsLocal('#checkoutForm');
+            checkoutForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const cartNow = await readCart();
+
+                // إذا كانت السلة فارغة → عرض رسالة
+                if (cartNow.length === 0) {
+                    showMessage("⚠️ يرجى إضافة منتج إلى السلة قبل إتمام الطلب.");
+                    return; // ⛔ إيقاف العملية
+                }
+
+                // التحقق من جميع الحقول (Required)
+                const fields = [
+                    {el: qsLocal('#customerName'), name: 'الاسم'},
+                    {el: qsLocal('#customerEmail'), name: 'البريد الإلكتروني'},
+                    {el: qsLocal('#customerPhone'), name: 'رقم الهاتف'},
+                    {el: qsLocal('#customerAddress'), name: 'العنوان'},
+                    {el: qsLocal('#customerCity'), name: 'المدينة'},
+                    {el: qsLocal('#customerPostcode'), name: 'الرمز البريدي'},
+                    {el: qsLocal('#paymentMethod'), name: 'طريقة الدفع'}
+                ];
+
+                for (let f of fields) {
+                    if (!f.el.value.trim()) {
+                        showMessage(`⚠️ يرجى ملء حقل ${f.name}.`);
+                        f.el.focus();
+                        return; // إيقاف العملية
+                    }
+                }
+
+                // إنشاء بيانات الطلب
+                const customer = {
+                    name: qsLocal('#customerName').value.trim(),
+                    email: qsLocal('#customerEmail').value.trim(),
+                    phone: qsLocal('#customerPhone').value.trim(),
+                    address: qsLocal('#customerAddress').value.trim(),
+                    city: qsLocal('#customerCity').value,
+                    postcode: qsLocal('#customerPostcode').value.trim(),
+                    payment: qsLocal('#paymentMethod').value
+                };
+
+                const orderId = Math.floor(Math.random() * 1e11);
+                const orderTotal = cartNow.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+                qsLocal('#orderDetails').innerHTML = `
+                    <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
+                    <p><strong>رقم الطلب:</strong> ${orderId}</p>
+                    <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>الإجمالي:</strong> ${orderTotal.toLocaleString()} ر.س</p>
+                    <ul>
+                        ${cartNow.map(i => `<li>${i.title} × ${i.quantity} = ${i.price.toLocaleString()} ر.س</li>`).join('')}
+                    </ul>
+                    <p>الاسم: ${customer.name}</p>
+                    <p>البريد: ${customer.email}</p>
+                    <p>الهاتف: ${customer.phone}</p>
+                    <p>العنوان: ${customer.address}</p>
+                    <p>المدينة: ${customer.city}</p>
+                    <p>الرمز البريدي: ${customer.postcode}</p>
+                    <button id="printOrder">طباعة الطلب</button>
+                `;
+
+                thankYouMessage.style.display = 'block';
+                checkoutForm.style.display = 'none';
+
+                // تفريغ السلة بعد الطلب (IndexedDB)
+                await writeCart([]);
+                qsLocal('#cartCount') && (qsLocal('#cartCount').textContent = "0");
+
+                qsLocal('#printOrder')?.addEventListener('click', () => window.print());
+            });
+        } catch (error) {
+            console.error('Error loading checkout form:', error);
+        }
     }
+
+    // استدعاء دالة لتحميل النموذج عند تحميل الصفحة
+    await loadCheckoutForm();
 
     // 🧱 عرض هيكل الصفحة دائمًا
     if (cart.length === 0) {
-      cartReviewContainer.innerHTML = `
-        <p style="color: red; font-weight: bold; text-align:center;">
-          🛍️ السلة فارغة حاليًا.
-        </p>
-      `;
-      subtotalEl.textContent = "0.00 ر.س";
+        cartReviewContainer.innerHTML = `
+            <p style="color: red; font-weight: bold; text-align:center;">
+                🛍️ السلة فارغة حاليًا. يمكنك إضافة منتجات إلى السلة للمتابعة.
+            </p>
+            <p style="text-align:center;">
+                <a href="/products" style="text-decoration: none; color: #007bff;">تصفح المنتجات</a>
+            </p>
+        `;
+        subtotalEl.textContent = "0.00 ر.س";
     } else {
-      cartReviewContainer.innerHTML = cart.map(i => `
-        <div class="checkout-item">
-          <span>${i.title} × ${i.quantity}</span>
-          <span>${i.price.toLocaleString()} ر.س</span>
-        </div>
-      `).join('');
-      const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      subtotalEl.textContent = subtotal.toLocaleString() + " ر.س";
+        cartReviewContainer.innerHTML = cart.map(i => `
+            <div class="checkout-item">
+                <span>${i.title} × ${i.quantity}</span>
+                <span>${i.price.toLocaleString()} ر.س</span>
+            </div>
+        `).join('');
+        const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        subtotalEl.textContent = subtotal.toLocaleString() + " ر.س";
     }
 
     // دالة لعرض الرسالة بشكل fade in/out
     function showMessage(msg) {
-      messageContainer.textContent = msg;
-      messageContainer.style.display = 'block';
-      setTimeout(() => messageContainer.style.opacity = 1, 50); // fade in
-
-      setTimeout(() => {
-        messageContainer.style.opacity = 0; // fade out
-        setTimeout(() => messageContainer.style.display = 'none', 500);
-      }, 10000); // 10 ثواني
-    }
-
-    // 🧩 التعامل مع تقديم الطلب
-    checkoutForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const cartNow = await readCart();
-
-      // إذا كانت السلة فارغة → عرض رسالة
-      if (cartNow.length === 0) {
-        showMessage("⚠️ يرجى إضافة منتج إلى السلة قبل إتمام الطلب.");
-        return; // ⛔ إيقاف العملية
-      }
-
-      // التحقق من جميع الحقول (Required)
-      const fields = [
-        {el: qsLocal('#customerName'), name: 'الاسم'},
-        {el: qsLocal('#customerEmail'), name: 'البريد الإلكتروني'},
-        {el: qsLocal('#customerPhone'), name: 'رقم الهاتف'},
-        {el: qsLocal('#customerAddress'), name: 'العنوان'},
-        {el: qsLocal('#customerCity'), name: 'المدينة'},
-        {el: qsLocal('#customerPostcode'), name: 'الرمز البريدي'},
-        {el: qsLocal('#paymentMethod'), name: 'طريقة الدفع'}
-      ];
-
-      for (let f of fields) {
-        if (!f.el.value.trim()) {
-          showMessage(`⚠️ يرجى ملء حقل ${f.name}.`);
-          f.el.focus();
-          return; // إيقاف العملية
+        let messageContainer = qsLocal('#checkoutMessageContainer');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.id = 'checkoutMessageContainer';
+            messageContainer.style.cssText = `
+                color: white; 
+                background-color: red; 
+                padding: 10px; 
+                margin-bottom: 10px; 
+                text-align: center; 
+                display: none; 
+                font-weight: bold; 
+                opacity: 0; 
+                transition: opacity 0.5s ease-in-out;
+            `;
+            checkoutForm.prepend(messageContainer);
         }
-      }
+        messageContainer.textContent = msg;
+        messageContainer.style.display = 'block';
+        setTimeout(() => messageContainer.style.opacity = 1, 50); // fade in
 
-      // إنشاء بيانات الطلب
-      const customer = {
-        name: qsLocal('#customerName').value.trim(),
-        email: qsLocal('#customerEmail').value.trim(),
-        phone: qsLocal('#customerPhone').value.trim(),
-        address: qsLocal('#customerAddress').value.trim(),
-        city: qsLocal('#customerCity').value,
-        postcode: qsLocal('#customerPostcode').value.trim(),
-        payment: qsLocal('#paymentMethod').value
-      };
+        setTimeout(() => {
+            messageContainer.style.opacity = 0; // fade out
+            setTimeout(() => messageContainer.style.display = 'none', 500);
+        }, 10000); // 10 ثواني
+    }
+}
 
-      const orderId = Math.floor(Math.random() * 1e11);
-      const orderTotal = cartNow.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-      qsLocal('#orderDetails').innerHTML = `
-        <p><strong>طريقة الدفع:</strong> ${customer.payment}</p>
-        <p><strong>رقم الطلب:</strong> ${orderId}</p>
-        <p><strong>تاريخ الطلب:</strong> ${new Date().toLocaleDateString()}</p>
-        <p><strong>الإجمالي:</strong> ${orderTotal.toLocaleString()} ر.س</p>
-        <ul>
-          ${cartNow.map(i => `<li>${i.title} × ${i.quantity} = ${i.price.toLocaleString()} ر.س</li>`).join('')}
-        </ul>
-        <p>الاسم: ${customer.name}</p>
-        <p>البريد: ${customer.email}</p>
-        <p>الهاتف: ${customer.phone}</p>
-        <p>العنوان: ${customer.address}</p>
-        <p>المدينة: ${customer.city}</p>
-        <p>الرمز البريدي: ${customer.postcode}</p>
-        <button id="printOrder">طباعة الطلب</button>
-      `;
-
-      thankYouMessage.style.display = 'block';
-      checkoutForm.style.display = 'none';
-
-      // تفريغ السلة بعد الطلب (IndexedDB)
-      await writeCart([]);
-      qsLocal('#cartCount') && (qsLocal('#cartCount').textContent = "0");
-
-      qsLocal('#printOrder')?.addEventListener('click', () => window.print());
-    });
-  }
-
-  // استدعاء دالة cartMenu عند تحميل الصفحة
-  document.addEventListener('DOMContentLoaded', () => {
-    // محاولة عرض السلة المنسدلة عند التحميل
-    updateCartCount();
-    updateCartDropdown();
-    injectCurrencyDropdown();
-    // attach empty/checkout buttons if exist
-    document.getElementById('emptyCart')?.addEventListener('click', async () => { await emptyCartAction(); });
-    document.getElementById('checkout')?.addEventListener('click', () => checkoutAction());
-  });
+// استدعاء دالة عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+    initCheckoutPage(); // تهيئة صفحة الدفع
+});
 
   /* ---------------- Init ---------------- */
   document.addEventListener('DOMContentLoaded', async () => {
