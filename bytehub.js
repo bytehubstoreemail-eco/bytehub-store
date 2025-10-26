@@ -461,30 +461,31 @@
     script.src = PRODUCTS_FEED;
     document.body.appendChild(script);
   }
-/* ---------------- Checkout Page JS ---------------- */
+//* ---------------- Checkout Page JS ---------------- */
 function initCheckoutPage() {
   console.log("🛒 تهيئة صفحة Checkout");
-   
-  // قراءة محتويات السلة
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-   // دالة لعرض السلة المنسدلة
-function cartMenu() {
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const cartDropdown = document.querySelector('#cartDropdown'); // حدد حاوية السلة المنسدلة
 
-  if (cartDropdown) {
-    if (cart.length === 0) {
-      cartDropdown.innerHTML = '<p>السلة فارغة</p>';
-    } else {
-      cartDropdown.innerHTML = cart.map(item => `
-        <div class="cart-item">
-          <span>${item.title} × ${item.quantity}</span>
-          <span>${item.price.toLocaleString()} ر.س</span>
-        </div>
-      `).join('');
+  // قراءة محتويات السلة من localStorage
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+  // دالة لعرض السلة المنسدلة
+  function cartMenu() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartDropdown = document.querySelector('#cartDropdown'); // حدد حاوية السلة المنسدلة
+
+    if (cartDropdown) {
+      if (cart.length === 0) {
+        cartDropdown.innerHTML = '<p>السلة فارغة</p>';
+      } else {
+        cartDropdown.innerHTML = cart.map(item => `
+          <div class="cart-item">
+            <span>${item.title} × ${item.quantity}</span>
+            <span>${item.price.toLocaleString()} ر.س</span>
+          </div>
+        `).join('');
+      }
     }
   }
-}
 
   const qs = s => document.querySelector(s);
   const checkoutForm = qs('#checkoutForm');
@@ -512,8 +513,6 @@ function cartMenu() {
     `;
     checkoutForm.prepend(messageContainer);
   }
-
-
 
   // 🧱 عرض هيكل الصفحة دائمًا
   if (cart.length === 0) {
@@ -618,6 +617,11 @@ function cartMenu() {
     qs('#printOrder')?.addEventListener('click', () => window.print());
   });
 }
+
+// استدعاء دالة cartMenu عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+  cartMenu(); // عرض العناصر في السلة المنسدلة عند تحميل الصفحة
+});
 
 
  /* ---------------- Init ---------------- */
