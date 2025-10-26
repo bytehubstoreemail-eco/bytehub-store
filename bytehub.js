@@ -3,13 +3,30 @@
    Version: 2.0.0-mod | Author: ByteHub Store (modified)
    Note: Uses IndexedDB (objectStore: 'kv') and Web Crypto AES-GCM encryption
    ========================================================== */
-const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
 (function(){ "use strict";
-            
+   const PRODUCTS_FEED = window.PRODUCTS_FEED || "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
+
   /* ------------------ Helpers & Selectors ------------------ */
   const qs = (sel, root=document) => root.querySelector(sel);
   const qsa = (sel, root=document) => Array.from((root || document).querySelectorAll(sel));
 
+            
+  /* ================== Utility placeholders referenced earlier ================== */
+  // تم تعريف PRODUCTS_FEED و detectPageType سابقًا في الجزء الأصلي — إذا لم تُعرَّف قم بتعريفها:
+
+  function detectPageType() {
+    const path = window.location.pathname.toLowerCase();
+
+    if (path.includes('/p/checkout')) return 'checkout';
+    if (path.includes('/p/cart')) return 'cart';
+    if (path.includes('/p/wishlist')) return 'wishlist';
+    if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
+
+    if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
+      return 'product';
+    }
+    return 'other';
+  }
   /* ------------------ Crypto (Web Crypto) ------------------ */
   // غيّر هذه العبارة إلى عبارة سرية خاصة بك قبل النشر
   const PASS_PHRASE = "gggFDTEHGYtfy59GGTFÙ$ỀÈÈTF5588GFYgggtytf";
@@ -931,23 +948,6 @@ const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/
     await updateCartDropdown();
   }
 
-  /* ================== Utility placeholders referenced earlier ================== */
-  // تم تعريف PRODUCTS_FEED و detectPageType سابقًا في الجزء الأصلي — إذا لم تُعرَّف قم بتعريفها:
-  const PRODUCTS_FEED = window.PRODUCTS_FEED || "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
-
-  function detectPageType() {
-    const path = window.location.pathname.toLowerCase();
-
-    if (path.includes('/p/checkout')) return 'checkout';
-    if (path.includes('/p/cart')) return 'cart';
-    if (path.includes('/p/wishlist')) return 'wishlist';
-    if (path === '/' || path.includes('/search') || path.includes('/index')) return 'home';
-
-    if (document.body.classList.contains('item-view') || document.querySelector('.post-body')) {
-      return 'product';
-    }
-    return 'other';
-  }
 
   // ensure updateCartDropdown available globally
   window.updateCartDropdown = updateCartDropdown;
