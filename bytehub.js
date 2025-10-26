@@ -4,7 +4,8 @@
    Note: Uses IndexedDB (objectStore: 'kv') and Web Crypto AES-GCM encryption
    ========================================================== */
 (function(){ "use strict";
-
+            
+const PRODUCTS_FEED = "https://bytehubstoren.blogspot.com/feeds/posts/default/-/product?alt=json-in-script&callback=renderProductsFromFeed";
   /* ------------------ Helpers & Selectors ------------------ */
   const qs = (sel, root=document) => root.querySelector(sel);
   const qsa = (sel, root=document) => Array.from((root || document).querySelectorAll(sel));
